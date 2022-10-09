@@ -1,0 +1,14 @@
+{
+    "folders": [
+		{
+			"path": "server"
+		},
+		{
+			"path": "ui"
+		},
+		{
+			"path": "protos"
+		}
+	],
+    "settings": {}
+}

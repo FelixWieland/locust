@@ -1,22 +1,31 @@
 {
-  "name": "vite-template-solid",
-  "version": "0.0.0",
-  "description": "",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "serve": "vite preview"
-  },
-  "license": "MIT",
-  "devDependencies": {
-    "autoprefixer": "^10.4.8",
-    "postcss": "^8.4.16",
-    "tailwindcss": "^3.1.8",
-    "typescript": "^4.8.2",
-    "vite": "^3.0.9",
-    "vite-plugin-solid": "^2.3.0"
-  },
-  "dependencies": {
-    "solid-js": "^1.5.1"
-  }
+    "name": "vite-template-solid",
+    "version": "0.0.0",
+    "description": "",
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build",
+        "serve": "vite preview",
+        "protoc": "protoc --ts_out=\"./src/runtime/api\" --grpc-web_out=\"import_style=typescript,mode=grpcwebtext:./src/runtime/api\" --proto_path=\"../protos/\" messages.proto api.proto"
+    },
+    "license": "MIT",
+    "devDependencies": {
+        "@originjs/vite-plugin-commonjs": "^1.0.3",
+        "autoprefixer": "^10.4.8",
+        "postcss": "^8.4.16",
+        "tailwindcss": "^3.1.8",
+        "typescript": "^4.8.2",
+        "vite": "^3.0.9",
+        "vite-plugin-solid": "^2.3.0"
+    },
+    "dependencies": {
+        "@protobuf-ts/grpcweb-transport": "^2.8.1",
+        "@protobuf-ts/plugin": "^2.8.1",
+        "api": "file:src/runtime/api",
+        "google-protobuf": "^3.21.1",
+        "grpc-web": "^1.4.1",
+        "protoc-gen-grpc-web": "^1.4.0",
+        "protoc-gen-ts": "^0.8.5",
+        "solid-js": "^1.5.1"
+    }
 }

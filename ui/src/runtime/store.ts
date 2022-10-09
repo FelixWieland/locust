@@ -1,21 +1,22 @@
 import { createStore, produce } from "solid-js/store";
-import { DropT } from "./drop";
-import { UUID } from "./util";
+import { UUID, NodeT } from "./types";
 
-type Drops = Record<UUID, DropT>
+type Nodes = Record<UUID, NodeT>
 
-export const [drops, updateDrops] = createStore<Drops>({})
+export const [nodes, updateNodes] = createStore<Nodes>({})
 
 export let dropIds = [];
 
-updateDrops(produce(o => {
+updateNodes(produce(o => {
     for (let i = 0; i < 100; i++) {
-        const id = btoa(Math.random().toString()).substring(10,15);
+        const id = btoa(Math.random().toString()).substring(10, 15);
         dropIds.push(id)
         o[id] = {
-            id,
-            name: id,
-            namespace: "/",
+            meta: {
+                id,
+                name: id,
+                namespace: "/",
+            },
             value: {
                 timestamp: Date.now(),
                 value: 0

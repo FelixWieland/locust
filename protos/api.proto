@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package api;
+
+import "messages.proto";
+
+service api {
+    // grpc-web currently doesnt support bidi streaming -> thats why the client stream is simulated by continues requests by the client that references the connection id
+    rpc Stream(StreamRequests) returns (stream StreamResponses) {}
+    rpc StreamRequest(UnaryStreamRequest) returns (None) {}
+}

@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package api;
+
+import "google/protobuf/timestamp.proto";
+
+message None {}
+
+message ConnectionID {
+    string id = 1;
+}
+
+message Heartbeat {
+    google.protobuf.Timestamp timestamp = 5;
+}
+
+message StreamRequests {
+    repeated StreamRequest requests = 1;
+}
+
+message StreamResponses {
+    repeated StreamResponse responses = 1;
+}
+
+message StreamRequest {
+    oneof data {
+        None none = 1;
+        Heartbeat heartbeat = 2;
+    }
+}
+
+message StreamResponse {
+    oneof data {
+        None none = 1;
+        Heartbeat heartbeat = 2;
+        ConnectionID connectionID = 3;
+    }
+}
+
+message UnaryStreamRequest {
+    ConnectionID connectionID = 1;
+    repeated StreamRequest requests = 2;
+}
