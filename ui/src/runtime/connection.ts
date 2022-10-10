@@ -1,7 +1,11 @@
 import { apiClient } from "./api/api.client";
-import { ConnectionID, Heartbeat, StreamRequest, StreamResponse, UnaryStreamRequest } from "./api/messages";
+import { ConnectionID, Heartbeat, Session, StreamRequest, StreamResponse, UnaryStreamRequest, CreateNode, Node, UpdateNodeValue } from "./api/messages";
 import { UUID } from "./types";
 import * as heartbeat from './heartbeat'
+import { readSessionToken, setSession, updateNodes, writeSessionToken } from "./store";
+import { assure } from "./util";
+import { createSignal } from "solid-js";
+import { produce } from "solid-js/store";
 
 
 class Connection {
@@ -9,7 +13,8 @@ class Connection {
 
     private _id: UUID
     
-    private _lastHeartbeat: null | Heartbeat
+    private _lastHeartbeat: null | Heartbeat;
+    
     private _latencyMs: null | number
 
     private _STOP = false
@@ -63,15 +68,36 @@ class Connection {
         }
     }
 
+    async createNode(cn: CreateNode) {
+        const sr = StreamRequest.create()
+        sr.data = {
+            oneofKind: "createNode",
+            createNode: {}
+        }
+        await this.sendSingleData(sr)
+    }
+    
+    async updateNodeValue(up: UpdateNodeValue) {
+        const sr = StreamRequest.create()
+        sr.data = {
+            oneofKind: "updateNodeValue",
+            updateNodeValue: up
+        }
+        await this.sendSingleData(sr)
+    }
+
     async sendSingleData(sr: StreamRequest) {
         await this.send([sr])
     }
 
     onResponse(response: StreamResponse) {
-        switch (response.data.oneofKind) {
-        case "heartbeat": this.onHeartbeat((response.data as unknown as any).heartbeat as Heartbeat)
-        default: break
-        }
+        if (assure(response, "heartbeat")) {
+            this.onHeartbeat((response.data as unknown as any).heartbeat as Heartbeat)
+        } else if (assure(response, "session")) {
+            this.onSession((response.data as unknown as any).session as Session)
+        } else if (assure(response, "node")) {
+            this.onNode((response.data as unknown as any).node as Node)
+        } 
     }
 
     private onHeartbeat(data: Heartbeat) {
@@ -80,6 +106,29 @@ class Connection {
         }
         this._latencyMs = heartbeat.calculateLatencyMs(this._lastHeartbeat.timestamp, data.timestamp)
         console.log(`Connection.Heartbeat: received server : ${data.timestamp.seconds}, latency: ${this._latencyMs}ms`)
+    }
+
+    private onSession(data: Session) {
+        if (readSessionToken() == data.sessionToken) {
+            console.log(`Session: aquired/received session`)
+        } else {
+            console.log(`Session: aquired new session`)
+            writeSessionToken(data.sessionToken)
+        }
+        setSession(data)
+    }
+
+    private onNode(data: Node) {
+        console.log(`Node: received node: ${data.id}`)
+        updateNodes(produce(nodes => {
+            nodes[data.id] = {
+                id: data.id,
+                value: (data.value as any).some !== undefined ? {
+                    timestamp: heartbeat.timestampFromProto((data.value as any).some.timestamp),
+                    value: (data.value as any).some.value
+                } : undefined
+            }
+        }))
     }
 
     die() {

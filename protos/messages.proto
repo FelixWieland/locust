@@ -3,6 +3,7 @@ syntax = "proto3";
 package api;
 
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/any.proto";
 
 message None {}
 
@@ -11,7 +12,7 @@ message ConnectionID {
 }
 
 message Heartbeat {
-    google.protobuf.Timestamp timestamp = 5;
+    google.protobuf.Timestamp timestamp = 1;
 }
 
 message StreamRequests {
@@ -26,6 +27,9 @@ message StreamRequest {
     oneof data {
         None none = 1;
         Heartbeat heartbeat = 2;
+        AquireSession aquireSession = 3;
+        CreateNode createNode = 4;
+        UpdateNodeValue updateNodeValue = 5;
     }
 }
 
@@ -34,10 +38,45 @@ message StreamResponse {
         None none = 1;
         Heartbeat heartbeat = 2;
         ConnectionID connectionID = 3;
+        Session session = 4;
+        Node node = 5;
     }
 }
 
 message UnaryStreamRequest {
     ConnectionID connectionID = 1;
     repeated StreamRequest requests = 2;
+}
+
+message AquireSession {
+    oneof data {
+        None none = 1; // in this case we create a new session
+        string sessionToken = 2; // in this case we try to aquire a previous session
+    }
+}
+
+message Session {
+    string sessionToken = 1;
+    int32 active_connections = 2;
+}
+
+message Node {
+    string id = 1;
+    oneof value {
+        NodeValue some = 2;
+        None none = 3;
+    }
+}
+
+message NodeValue {
+    google.protobuf.Timestamp timestamp = 1;
+    google.protobuf.Any data = 2;
+}
+
+message CreateNode {
+}
+
+message UpdateNodeValue {
+    string id = 1;
+    google.protobuf.Any data = 2;
 }

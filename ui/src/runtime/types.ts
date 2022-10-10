@@ -2,14 +2,8 @@
 export type UUID = string
 
 export type NodeT = {
-    meta: NodeMeta
-    value: NodeValue
-}
-
-export type NodeMeta = {
     id: UUID
-    namespace: string
-    name: string
+    value?: NodeValue
 }
 
 export type NodeValue = {
@@ -21,4 +15,22 @@ export enum ConnectionState {
     CONNECTING,
     CONNECTED,
     ERROR
+}
+
+export type ConnectionOptions = {
+    endpoint: string
+    session?: boolean,
+
+    storage?: Storage
+
+    sidebar?: {
+        disabled?: boolean,
+        open?: boolean,
+        
+    },
+}
+
+interface Storage {
+    getItem(key: string): string
+    setItem(key: string, value: string): void
 }

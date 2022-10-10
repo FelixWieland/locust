@@ -1,7 +1,8 @@
-import { createMemo, JSX } from 'solid-js'
+import { Accessor, createMemo, createSignal, JSX } from 'solid-js'
 import { NodeT, NodeValue, UUID } from './types'
-import { nodes, updateNodes } from './store'
+import { connection, nodes, updateNodes } from './store'
 import { produce } from 'solid-js/store'
+import { UpdateNodeValue } from './api/messages'
 
 type NodeIdentification = {
     id: UUID
@@ -12,27 +13,40 @@ type NodeProps = {
 } & NodeIdentification
 
 type NodeData = {
-    node: NodeT
-    updateValue: (newValue: NodeValue) => void
+    node: Accessor<NodeT>
+    updateValue: (value: any) => void
+}
+
+function node(id: UUID): NodeData | null {
+
+    const updateValue = (value: any) => {
+        const up = UpdateNodeValue.create()
+        up.id = id
+        up.data = {
+            typeUrl: '',
+            value: Uint8Array.from([value])
+        }
+        connection()?.updateNodeValue(up)
+    }
+
+    const nodeData = createMemo(() => {
+        return nodes[id] || null
+    })
+
+    if (nodeData() == null) {
+        return null
+    } else {
+        return {
+            node: nodeData,
+            updateValue: updateValue
+        }
+    }
 }
 
 function Node(props: NodeProps) {
     const id = props.id
-
-    const updateValue = (newValue: NodeValue) => {
-        updateNodes(produce(nodes => {
-            nodes[id].value = newValue
-        }))
-    }
-
-    const child = createMemo(() => {
-        const node = nodes[id]
-        return node ? props.children({
-            node,
-            updateValue
-        }) : null
-    });
-    return child
+    const n = node(id)
+    return n !== null ? props.children(n) : null
 }
 
 export {

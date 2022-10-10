@@ -4,6 +4,7 @@
     "description": "",
     "scripts": {
         "dev": "vite",
+        "dev-host": "vite --host",
         "build": "vite build",
         "serve": "vite preview",
         "protoc": "protoc --ts_out=\"./src/runtime/api\" --grpc-web_out=\"import_style=typescript,mode=grpcwebtext:./src/runtime/api\" --proto_path=\"../protos/\" messages.proto api.proto"

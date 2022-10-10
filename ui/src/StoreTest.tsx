@@ -1,24 +1,33 @@
-import { For } from "solid-js";
+import { createMemo, For } from "solid-js";
 import { createStore, produce } from "solid-js/store";
-import { dropIds } from "./runtime/store";
+import { allNodes, connection, session } from "./runtime/store";
 import { Node } from "./runtime/Node"
 
 function StoreTest() {
-    return (
-        <For each={dropIds}>{(id) => {
-            return <Node id={id}>{
+    return (<div class="h-screen w-full p-4 overflow-scroll">
+        {connection() && (
+            <button class="bg-teal-700 p-4 rounded text-white" onClick={() => connection().createNode({})}>
+                Create node
+            </button>
+        )}
+        {session() && (
+            <p class="mb-5">
+                Session token: {session().sessionToken}
+                <br />
+                Active connections: {session().activeConnections}
+            </p>
+        )}
+        <For each={allNodes()}>{(node) => {
+            return <Node id={node.id}>{
                 ({
                     node,
                     updateValue
-                }) => <p>{node.meta.id}: {node.value.timestamp} <button onClick={() => updateValue({
-                    value: 0,
-                    timestamp: Date.now(),
-                })}>
+                }) => <p>{node().id}: {node().value?.timestamp} <button onClick={() => updateValue(2)}>
                     Update
                 </button></p>
             }</Node>
         }}</For>
-    )
+    </div>)
 }
 
 export {

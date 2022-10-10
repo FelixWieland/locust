@@ -2,8 +2,9 @@ use std::sync::Arc;
 
 use futures::future::join_all;
 use tonic::Status;
-use futures; 
+use futures::{self, FutureExt}; 
 
+use crate::server::api::{AquireSession, CreateNode, UpdateNodeValue};
 use crate::{connection::Connection, server::api, server::api::StreamRequests};
 use crate::events::api::{ Heartbeat };
 
@@ -16,9 +17,11 @@ impl DataHandler {
         for request in r.requests {
             match request.data {
                 Some(data) => {
-                    let c = conn.clone();
                     promises.push(match data {
-                        api::stream_request::Data::Heartbeat(v) => DataHandler::on_heartbeat(c, v),
+                        api::stream_request::Data::Heartbeat(v) => DataHandler::on_heartbeat(conn.clone(), v).boxed_local(),
+                        api::stream_request::Data::AquireSession(a) => DataHandler::on_aquire_session(conn.clone(), a).boxed_local(),
+                        api::stream_request::Data::CreateNode(n) => DataHandler::on_create_node(conn.clone(), n).boxed_local(),
+                        api::stream_request::Data::UpdateNodeValue(nv) => DataHandler::on_update_node_value(conn.clone(), nv).boxed_local(),
                         api::stream_request::Data::None(_) => todo!(),
                     })
                 },
@@ -28,8 +31,20 @@ impl DataHandler {
         join_all(promises).await;
     }
 
-    async fn on_heartbeat(conn: Arc<Connection>, data: Heartbeat) {
-        conn.beat_once(data).await;
+    async fn on_heartbeat(conn: Arc<Connection>, data: Heartbeat)  {
+        conn.beat_once(data).await
+    }
+
+    async fn on_aquire_session(conn: Arc<Connection>, data: AquireSession) {
+        conn.aquire_session(data).await
+    }
+
+    async fn on_create_node(conn: Arc<Connection>, data: CreateNode) {
+        conn.create_node(data).await;
+    }
+
+    async fn on_update_node_value(conn: Arc<Connection>, data: UpdateNodeValue) {
+        conn.update_node_value(data).await;
     }
 
 }

@@ -1,11 +1,10 @@
 use api::{api_server::Api, StreamRequests, StreamResponses};
 use std::{pin::Pin, str::FromStr, sync::Arc};
-use tokio::sync::mpsc;
-use tokio_stream::{wrappers::ReceiverStream, StreamExt};
-use tonic::{codegen::futures_core::Stream, Request, Response, Status, Streaming};
+use tokio::{sync::mpsc};
+use tonic::{codegen::futures_core::Stream, Request, Response, Status};
 use uuid::Uuid;
 
-use crate::{events, state::GlobalState};
+use crate::{events, state::GlobalState, api_receiver_stream::APIReceiverStream };
 
 use self::api::{None, UnaryStreamRequest};
 
@@ -35,13 +34,20 @@ impl Api for APIService {
     ) -> Result<Response<Self::StreamStream>, Status> {
         //let mut in_stream = req.into_inner();
         let (tx, rx) = mpsc::channel(128);
+        println!("Connection: new incoming connection");
         let conn = self.state.clone().add_connection(tx);
-        // let state = self.state.clone();
 
-
+        
+        
+        let session_c = conn.clone();
         tokio::spawn(async move {
-            let _ = conn.send_single_data(api::stream_response::Data::ConnectionId(api::ConnectionId{
-                id: conn.id().to_string()
+            futures::executor::block_on(events::DataHandler::requests(session_c, api::StreamRequests { requests: req.into_inner().requests }));
+        });
+
+        let init_c = conn.clone();
+        tokio::spawn(async move {
+            let _ = init_c.send_single_data(api::stream_response::Data::ConnectionId(api::ConnectionId{
+                id: init_c.id().to_string()
             })).await;
             // while let Some(result) = in_stream.next().await {
             //     match result {
@@ -53,7 +59,7 @@ impl Api for APIService {
             // state.remove_connection(conn.id());
         });
 
-        let out_stream = ReceiverStream::new(rx);
+        let out_stream = APIReceiverStream::new(rx, Some(conn));
 
         Ok(Response::new(Box::pin(out_stream) as Self::StreamStream))
     }
@@ -69,7 +75,7 @@ impl Api for APIService {
             Ok(cid) => match self.state.get_connection_by_id(cid) {
                 Some(conn) => {
                     let reply = api::None {};
-                    events::DataHandler::requests(conn.clone(), api::StreamRequests { requests: inreq.requests }).await;
+                    futures::executor::block_on(events::DataHandler::requests(conn.clone(), api::StreamRequests { requests: inreq.requests }));                    
                     Ok(Response::new(reply))
                 }
                 None => Err(Status::not_found("Connection not found")),

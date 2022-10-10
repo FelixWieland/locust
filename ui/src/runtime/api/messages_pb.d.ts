@@ -1,6 +1,7 @@
 import * as jspb from 'google-protobuf'
 
 import * as google_protobuf_timestamp_pb from 'google-protobuf/google/protobuf/timestamp_pb';
+import * as google_protobuf_any_pb from 'google-protobuf/google/protobuf/any_pb';
 
 
 export class None extends jspb.Message {
@@ -106,6 +107,21 @@ export class StreamRequest extends jspb.Message {
   hasHeartbeat(): boolean;
   clearHeartbeat(): StreamRequest;
 
+  getAquiresession(): AquireSession | undefined;
+  setAquiresession(value?: AquireSession): StreamRequest;
+  hasAquiresession(): boolean;
+  clearAquiresession(): StreamRequest;
+
+  getCreatenode(): CreateNode | undefined;
+  setCreatenode(value?: CreateNode): StreamRequest;
+  hasCreatenode(): boolean;
+  clearCreatenode(): StreamRequest;
+
+  getUpdatenodevalue(): UpdateNodeValue | undefined;
+  setUpdatenodevalue(value?: UpdateNodeValue): StreamRequest;
+  hasUpdatenodevalue(): boolean;
+  clearUpdatenodevalue(): StreamRequest;
+
   getDataCase(): StreamRequest.DataCase;
 
   serializeBinary(): Uint8Array;
@@ -120,12 +136,18 @@ export namespace StreamRequest {
   export type AsObject = {
     none?: None.AsObject,
     heartbeat?: Heartbeat.AsObject,
+    aquiresession?: AquireSession.AsObject,
+    createnode?: CreateNode.AsObject,
+    updatenodevalue?: UpdateNodeValue.AsObject,
   }
 
   export enum DataCase { 
     DATA_NOT_SET = 0,
     NONE = 1,
     HEARTBEAT = 2,
+    AQUIRESESSION = 3,
+    CREATENODE = 4,
+    UPDATENODEVALUE = 5,
   }
 }
 
@@ -145,6 +167,16 @@ export class StreamResponse extends jspb.Message {
   hasConnectionid(): boolean;
   clearConnectionid(): StreamResponse;
 
+  getSession(): Session | undefined;
+  setSession(value?: Session): StreamResponse;
+  hasSession(): boolean;
+  clearSession(): StreamResponse;
+
+  getNode(): Node | undefined;
+  setNode(value?: Node): StreamResponse;
+  hasNode(): boolean;
+  clearNode(): StreamResponse;
+
   getDataCase(): StreamResponse.DataCase;
 
   serializeBinary(): Uint8Array;
@@ -160,6 +192,8 @@ export namespace StreamResponse {
     none?: None.AsObject,
     heartbeat?: Heartbeat.AsObject,
     connectionid?: ConnectionID.AsObject,
+    session?: Session.AsObject,
+    node?: Node.AsObject,
   }
 
   export enum DataCase { 
@@ -167,6 +201,8 @@ export namespace StreamResponse {
     NONE = 1,
     HEARTBEAT = 2,
     CONNECTIONID = 3,
+    SESSION = 4,
+    NODE = 5,
   }
 }
 
@@ -193,6 +229,162 @@ export namespace UnaryStreamRequest {
   export type AsObject = {
     connectionid?: ConnectionID.AsObject,
     requestsList: Array<StreamRequest.AsObject>,
+  }
+}
+
+export class AquireSession extends jspb.Message {
+  getNone(): None | undefined;
+  setNone(value?: None): AquireSession;
+  hasNone(): boolean;
+  clearNone(): AquireSession;
+
+  getSessiontoken(): string;
+  setSessiontoken(value: string): AquireSession;
+
+  getDataCase(): AquireSession.DataCase;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): AquireSession.AsObject;
+  static toObject(includeInstance: boolean, msg: AquireSession): AquireSession.AsObject;
+  static serializeBinaryToWriter(message: AquireSession, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AquireSession;
+  static deserializeBinaryFromReader(message: AquireSession, reader: jspb.BinaryReader): AquireSession;
+}
+
+export namespace AquireSession {
+  export type AsObject = {
+    none?: None.AsObject,
+    sessiontoken: string,
+  }
+
+  export enum DataCase { 
+    DATA_NOT_SET = 0,
+    NONE = 1,
+    SESSIONTOKEN = 2,
+  }
+}
+
+export class Session extends jspb.Message {
+  getSessiontoken(): string;
+  setSessiontoken(value: string): Session;
+
+  getActiveConnections(): number;
+  setActiveConnections(value: number): Session;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): Session.AsObject;
+  static toObject(includeInstance: boolean, msg: Session): Session.AsObject;
+  static serializeBinaryToWriter(message: Session, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): Session;
+  static deserializeBinaryFromReader(message: Session, reader: jspb.BinaryReader): Session;
+}
+
+export namespace Session {
+  export type AsObject = {
+    sessiontoken: string,
+    activeConnections: number,
+  }
+}
+
+export class Node extends jspb.Message {
+  getId(): string;
+  setId(value: string): Node;
+
+  getSome(): NodeValue | undefined;
+  setSome(value?: NodeValue): Node;
+  hasSome(): boolean;
+  clearSome(): Node;
+
+  getNone(): None | undefined;
+  setNone(value?: None): Node;
+  hasNone(): boolean;
+  clearNone(): Node;
+
+  getValueCase(): Node.ValueCase;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): Node.AsObject;
+  static toObject(includeInstance: boolean, msg: Node): Node.AsObject;
+  static serializeBinaryToWriter(message: Node, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): Node;
+  static deserializeBinaryFromReader(message: Node, reader: jspb.BinaryReader): Node;
+}
+
+export namespace Node {
+  export type AsObject = {
+    id: string,
+    some?: NodeValue.AsObject,
+    none?: None.AsObject,
+  }
+
+  export enum ValueCase { 
+    VALUE_NOT_SET = 0,
+    SOME = 2,
+    NONE = 3,
+  }
+}
+
+export class NodeValue extends jspb.Message {
+  getTimestamp(): google_protobuf_timestamp_pb.Timestamp | undefined;
+  setTimestamp(value?: google_protobuf_timestamp_pb.Timestamp): NodeValue;
+  hasTimestamp(): boolean;
+  clearTimestamp(): NodeValue;
+
+  getData(): google_protobuf_any_pb.Any | undefined;
+  setData(value?: google_protobuf_any_pb.Any): NodeValue;
+  hasData(): boolean;
+  clearData(): NodeValue;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): NodeValue.AsObject;
+  static toObject(includeInstance: boolean, msg: NodeValue): NodeValue.AsObject;
+  static serializeBinaryToWriter(message: NodeValue, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): NodeValue;
+  static deserializeBinaryFromReader(message: NodeValue, reader: jspb.BinaryReader): NodeValue;
+}
+
+export namespace NodeValue {
+  export type AsObject = {
+    timestamp?: google_protobuf_timestamp_pb.Timestamp.AsObject,
+    data?: google_protobuf_any_pb.Any.AsObject,
+  }
+}
+
+export class CreateNode extends jspb.Message {
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): CreateNode.AsObject;
+  static toObject(includeInstance: boolean, msg: CreateNode): CreateNode.AsObject;
+  static serializeBinaryToWriter(message: CreateNode, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): CreateNode;
+  static deserializeBinaryFromReader(message: CreateNode, reader: jspb.BinaryReader): CreateNode;
+}
+
+export namespace CreateNode {
+  export type AsObject = {
+  }
+}
+
+export class UpdateNodeValue extends jspb.Message {
+  getId(): string;
+  setId(value: string): UpdateNodeValue;
+
+  getData(): google_protobuf_any_pb.Any | undefined;
+  setData(value?: google_protobuf_any_pb.Any): UpdateNodeValue;
+  hasData(): boolean;
+  clearData(): UpdateNodeValue;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): UpdateNodeValue.AsObject;
+  static toObject(includeInstance: boolean, msg: UpdateNodeValue): UpdateNodeValue.AsObject;
+  static serializeBinaryToWriter(message: UpdateNodeValue, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): UpdateNodeValue;
+  static deserializeBinaryFromReader(message: UpdateNodeValue, reader: jspb.BinaryReader): UpdateNodeValue;
+}
+
+export namespace UpdateNodeValue {
+  export type AsObject = {
+    id: string,
+    data?: google_protobuf_any_pb.Any.AsObject,
   }
 }
 
