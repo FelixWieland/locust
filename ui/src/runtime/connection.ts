@@ -1,8 +1,8 @@
 import { apiClient } from "./api/api.client";
-import { ConnectionID, Heartbeat, Session, StreamRequest, StreamResponse, UnaryStreamRequest, CreateNode, Node, UpdateNodeValue } from "./api/messages";
-import { UUID } from "./types";
+import { ConnectionID, Heartbeat, Session, StreamRequest, StreamResponse, UnaryStreamRequest, CreateNode, Node, UpdateNodeValue, NodeValue, None } from "./api/messages";
+import { ConnectionOptions, NodeValue as NodeValueC, UUID } from "./types";
 import * as heartbeat from './heartbeat'
-import { readSessionToken, setSession, updateNodes, writeSessionToken } from "./store";
+import { readSessionToken, setLatency, setSession, updateNodes, writeSessionToken } from "./store";
 import { assure } from "./util";
 import { createSignal } from "solid-js";
 import { produce } from "solid-js/store";
@@ -17,11 +17,14 @@ class Connection {
     
     private _latencyMs: null | number
 
+    private _options: ConnectionOptions
+
     private _STOP = false
 
-    constructor(connectionID: UUID, apiServer: apiClient) {
+    constructor(connectionID: UUID, apiServer: apiClient, options: ConnectionOptions) {
         this._id = connectionID
         this._server = apiServer
+        this._options = options
 
         // start heart beat
         this.beatOnce()
@@ -68,11 +71,19 @@ class Connection {
         }
     }
 
-    async createNode(cn: CreateNode) {
+    async createNode(nv?: NodeValue) {
         const sr = StreamRequest.create()
         sr.data = {
             oneofKind: "createNode",
-            createNode: {}
+            createNode: {
+                value: nv ? {
+                    oneofKind: 'some',
+                    some: nv
+                } : {
+                    oneofKind: 'none',
+                    none: None.create()
+                }
+            }
         }
         await this.sendSingleData(sr)
     }
@@ -105,15 +116,16 @@ class Connection {
             return
         }
         this._latencyMs = heartbeat.calculateLatencyMs(this._lastHeartbeat.timestamp, data.timestamp)
+        setLatency(this._latencyMs)
         console.log(`Connection.Heartbeat: received server : ${data.timestamp.seconds}, latency: ${this._latencyMs}ms`)
     }
 
     private onSession(data: Session) {
-        if (readSessionToken() == data.sessionToken) {
+        if ((this._options.session?.token || readSessionToken(this._options.session.storage || sessionStorage)) == data.sessionToken) {
             console.log(`Session: aquired/received session`)
         } else {
             console.log(`Session: aquired new session`)
-            writeSessionToken(data.sessionToken)
+            writeSessionToken(data.sessionToken, this._options.session.storage || sessionStorage)
         }
         setSession(data)
     }
@@ -121,12 +133,15 @@ class Connection {
     private onNode(data: Node) {
         console.log(`Node: received node: ${data.id}`)
         updateNodes(produce(nodes => {
+            let valuec: NodeValueC | undefined = undefined
+            if (data.value !== undefined && data.value.oneofKind == "some" && (data.value as any).some !== undefined) {
+                const timestamp = (data.value as any).some.timestamp
+                const value = (data.value as any).some.data
+                valuec = new NodeValueC(timestamp, value)
+            }
             nodes[data.id] = {
                 id: data.id,
-                value: (data.value as any).some !== undefined ? {
-                    timestamp: heartbeat.timestampFromProto((data.value as any).some.timestamp),
-                    value: (data.value as any).some.value
-                } : undefined
+                value: valuec
             }
         }))
     }

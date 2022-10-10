@@ -36,7 +36,7 @@ function ConnectionManager(props: ConnectionProps) {
 
     function aquireSession(): AquireSession {
         const aquireSession = AquireSession.create()
-        const sessionToken = readSessionToken()
+        const sessionToken = props.options.session?.token || readSessionToken(props.options.session?.storage || sessionStorage)
         if (!sessionToken) {
             aquireSession.data = {
                 oneofKind: 'none',
@@ -104,7 +104,7 @@ function ConnectionManager(props: ConnectionProps) {
                 if (response.data.oneofKind === "connectionID") {
                     // WHY THE FUCK DO I NEED TO DO THIS TYPESCRITP????!=!"§="I§ HOLY
                     const data = (response.data as unknown as any).connectionID as ConnectionID
-                    c = new Connection(data.id, apiServer)
+                    c = new Connection(data.id, apiServer, props.options)
                     setConnection(c)
                     setConnectionState(ConnectionState.CONNECTED)
                 }

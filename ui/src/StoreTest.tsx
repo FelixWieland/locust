@@ -6,7 +6,7 @@ import { Node } from "./runtime/Node"
 function StoreTest() {
     return (<div class="h-screen w-full p-4 overflow-scroll">
         {connection() && (
-            <button class="bg-teal-700 p-4 rounded text-white" onClick={() => connection().createNode({})}>
+            <button class="bg-teal-700 p-4 rounded text-white" onClick={() => connection().createNode()}>
                 Create node
             </button>
         )}
@@ -22,7 +22,7 @@ function StoreTest() {
                 ({
                     node,
                     updateValue
-                }) => <p>{node().id}: {node().value?.timestamp} <button onClick={() => updateValue(2)}>
+                }) => <p>{node().id}: {`${node().value?.number()}`} <button onClick={() => updateValue.number(1)}>
                     Update
                 </button></p>
             }</Node>

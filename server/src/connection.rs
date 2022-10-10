@@ -1,7 +1,8 @@
-use std::{str::FromStr, sync::Arc};
+use std::{str::FromStr, sync::Arc, vec};
 
 use chrono::Utc;
-use dashmap::DashMap;
+use dashmap::{DashMap, DashSet};
+use futures::future::join_all;
 use prost_types::{Any, Timestamp};
 use tokio::sync::{
     mpsc::{self, error::SendError, Receiver, Sender},
@@ -41,6 +42,8 @@ pub struct Connection {
 
     session: Mutex<Option<Arc<Session>>>,
 
+    subscribed_node_ids: DashSet<Uuid>,
+
     sender: Sender<Result<StreamResponses, Status>>,
     receiver: DashMap<Uuid, Sender<StreamRequests>>, // ! THIS IS CORRECT
 }
@@ -61,6 +64,7 @@ impl Connection {
             latency_ms: Arc::new(Mutex::new(None)),
 
             session: Mutex::new(None),
+            subscribed_node_ids: DashSet::new(),
 
             sender: sender,
             receiver: DashMap::new(),
@@ -136,9 +140,13 @@ impl Connection {
 
     pub async fn create_node(
         self: Arc<Self>,
-        _create_node: CreateNode,
+        create_node: CreateNode,
     ) -> Arc<runtime::node::Node<Any>> {
-        let n = self.global_state.create_node();
+        let data  = match create_node.value.unwrap() {
+            server::api::create_node::Value::Some(s) => s.data,
+            server::api::create_node::Value::None(_) => None,
+        };
+        let n = self.global_state.create_node(data);
         println!("Connection.create_node: node id - {:?}", n.id());
         // we always listen to the node we just created
         self.listen_to_node(n.id()).await;
@@ -178,7 +186,8 @@ impl Connection {
             drop(session);
         } else {
             drop(session);
-            if let Some(receiver) = self.global_state.listen_to_node(&node_id).await {
+            if let Some(receiver) = self.global_state.listen_to_node(&self.id, &node_id).await {
+                self.subscribed_node_ids.insert(node_id);
                 tokio::spawn(async move {
                     let mut stream = ReceiverStream::new(receiver);
                     while let Some(result) = stream.next().await {
@@ -261,7 +270,13 @@ impl Connection {
         *session = None;
 
         // we need to unsubscribe from the nodes
-        // HOW?
+        let mut promises = vec![];
+        for node_id in self.subscribed_node_ids.iter() {
+            promises.push(async move {
+                self.global_state.disconnect_from_node(&self.id, node_id.key()).await
+            })
+        }
+        join_all(promises).await;
 
         // at last we remove the connection from the global state
         self.global_state.remove_connection(&self.id);

@@ -74,6 +74,10 @@ message NodeValue {
 }
 
 message CreateNode {
+    oneof value {
+        NodeValue some = 2;
+        None none = 3;
+    }
 }
 
 message UpdateNodeValue {

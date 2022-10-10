@@ -229,6 +229,24 @@ export interface NodeValue {
  * @generated from protobuf message api.CreateNode
  */
 export interface CreateNode {
+    /**
+     * @generated from protobuf oneof: value
+     */
+    value: {
+        oneofKind: "some";
+        /**
+         * @generated from protobuf field: api.NodeValue some = 2;
+         */
+        some: NodeValue;
+    } | {
+        oneofKind: "none";
+        /**
+         * @generated from protobuf field: api.None none = 3;
+         */
+        none: None;
+    } | {
+        oneofKind: undefined;
+    };
 }
 /**
  * @generated from protobuf message api.UpdateNodeValue
@@ -929,19 +947,53 @@ export const NodeValue = new NodeValue$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class CreateNode$Type extends MessageType<CreateNode> {
     constructor() {
-        super("api.CreateNode", []);
+        super("api.CreateNode", [
+            { no: 2, name: "some", kind: "message", oneof: "value", T: () => NodeValue },
+            { no: 3, name: "none", kind: "message", oneof: "value", T: () => None }
+        ]);
     }
     create(value?: PartialMessage<CreateNode>): CreateNode {
-        const message = {};
+        const message = { value: { oneofKind: undefined } };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<CreateNode>(this, message, value);
         return message;
     }
     internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: CreateNode): CreateNode {
-        return target ?? this.create();
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* api.NodeValue some */ 2:
+                    message.value = {
+                        oneofKind: "some",
+                        some: NodeValue.internalBinaryRead(reader, reader.uint32(), options, (message.value as any).some)
+                    };
+                    break;
+                case /* api.None none */ 3:
+                    message.value = {
+                        oneofKind: "none",
+                        none: None.internalBinaryRead(reader, reader.uint32(), options, (message.value as any).none)
+                    };
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
     }
     internalBinaryWrite(message: CreateNode, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* api.NodeValue some = 2; */
+        if (message.value.oneofKind === "some")
+            NodeValue.internalBinaryWrite(message.value.some, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* api.None none = 3; */
+        if (message.value.oneofKind === "none")
+            None.internalBinaryWrite(message.value.none, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

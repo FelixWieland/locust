@@ -90,15 +90,19 @@ impl<T> Node<T> where T: Clone + std::cmp::PartialEq + std::fmt::Debug {
     /**
      * 
      */
-    pub async fn listen(&self) -> Receiver<Option<Value<T>>> {
+    pub async fn listen(&self, receiver_id: &Uuid) -> Receiver<Option<Value<T>>> {
         let (sender, receiver) = mpsc::channel::<Option<Value<T>>>(128);
-        self.listeners.insert(Uuid::new_v4(), sender.clone());
+        self.listeners.insert(receiver_id.clone(), sender.clone());
 
         // TODO: refactor this
         let v = self.value.lock().await;
         let _ = sender.send(v.clone()).await;
 
         receiver
+    }
+
+    pub async fn disconnect(&self, receiver_id: &Uuid) {
+        self.listeners.remove(receiver_id);
     }
 
 }

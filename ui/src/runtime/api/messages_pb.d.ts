@@ -351,6 +351,18 @@ export namespace NodeValue {
 }
 
 export class CreateNode extends jspb.Message {
+  getSome(): NodeValue | undefined;
+  setSome(value?: NodeValue): CreateNode;
+  hasSome(): boolean;
+  clearSome(): CreateNode;
+
+  getNone(): None | undefined;
+  setNone(value?: None): CreateNode;
+  hasNone(): boolean;
+  clearNone(): CreateNode;
+
+  getValueCase(): CreateNode.ValueCase;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): CreateNode.AsObject;
   static toObject(includeInstance: boolean, msg: CreateNode): CreateNode.AsObject;
@@ -361,6 +373,14 @@ export class CreateNode extends jspb.Message {
 
 export namespace CreateNode {
   export type AsObject = {
+    some?: NodeValue.AsObject,
+    none?: None.AsObject,
+  }
+
+  export enum ValueCase { 
+    VALUE_NOT_SET = 0,
+    SOME = 2,
+    NONE = 3,
   }
 }
 

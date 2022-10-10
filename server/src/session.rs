@@ -63,6 +63,13 @@ impl Session {
         // every time a connection disconnects we publish the session
         self.publish_self().await;
         // here we need to handle the unsubscribe of subscribed nodes
+        let mut promises = vec![];
+        for node_id in self.subscribed_node_ids.iter() {
+            promises.push(async move {
+                self.global_state.disconnect_from_node(connection_id, &node_id).await
+            });
+        }
+        join_all(promises).await;
     }
 
     pub async fn reset_lifetime(&self) {
@@ -85,7 +92,7 @@ impl Session {
     }
 
     pub async fn listen_to_node(self: Arc<Self>, node_id: Uuid) {
-        if let Some(receiver) = self.global_state.listen_to_node(&node_id).await {
+        if let Some(receiver) = self.global_state.listen_to_node(&self.id, &node_id).await {
 
             // we store wich node ids are subscribed 
             // like that clients that lost the connection dont have keep track wich values they subscribed

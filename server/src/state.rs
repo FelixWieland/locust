@@ -72,20 +72,27 @@ impl GlobalState {
         }
     }
 
-    pub fn create_node(&self) -> Arc<Node<Any>> {
-        self.runtime.add_node(Node::new(None))
+    pub fn create_node(&self, value: Option<Any>) -> Arc<Node<Any>> {
+        self.runtime.add_node(Node::new(value))
     }
 
     pub async fn update_node_value(&self, node_id: &Uuid, new_value: Option<Value<Any>>) -> Option<Arc<Node<Any>>> {
         self.runtime.update_node_value(node_id, new_value).await
     }
 
-    pub async fn listen_to_node(&self, node_id: &Uuid) -> Option<Receiver<Option<Value<Any>>>> {
+    pub async fn listen_to_node(&self, receiver_id: &Uuid, node_id: &Uuid) -> Option<Receiver<Option<Value<Any>>>> {
         let n = self.runtime.get_node(node_id);
         if let Some(n) = n {
-            Some(n.listen().await)
+            Some(n.listen(receiver_id).await)
         } else {
             None
+        }
+    }
+
+    pub async fn disconnect_from_node(&self, receiver_id: &Uuid, node_id: &Uuid) {
+        let n = self.runtime.get_node(node_id);
+        if let Some(n) = n {
+            n.disconnect(receiver_id).await
         }
     }
 
