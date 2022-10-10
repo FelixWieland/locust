@@ -119,6 +119,8 @@ impl Connection {
         &self,
         responses: Result<StreamResponses, Status>,
     ) -> Result<(), SendError<Result<StreamResponses, Status>>> {
+        // TODO: we need to do batching here (150ms interval?)
+        // also the same needs to happen on the client
         self.sender.send(responses).await
     }
 
