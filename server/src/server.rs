@@ -1,16 +1,15 @@
-use api::{api_server::Api, StreamRequests, StreamResponses};
 use std::{pin::Pin, str::FromStr, sync::Arc};
-use tokio::{sync::mpsc};
+use tokio::sync::mpsc;
 use tonic::{codegen::futures_core::Stream, Request, Response, Status};
 use uuid::Uuid;
 
-use crate::{events, state::GlobalState, api_receiver_stream::APIReceiverStream };
+use crate::builders;
+use crate::{events, state::GlobalState, util::api_receiver_stream::APIReceiverStream};
 
-use self::api::{None, UnaryStreamRequest};
-
-pub mod api {
-    tonic::include_proto!("api");
-}
+use crate::api::{
+    api_server::Api, stream_response, ConnectionId, None, StreamRequests, StreamResponses,
+    UnaryStreamRequest,
+};
 
 #[derive(Debug)]
 pub struct APIService {
@@ -37,18 +36,22 @@ impl Api for APIService {
         println!("Connection: new incoming connection");
         let conn = self.state.clone().add_connection(tx);
 
-        
-        
         let session_c = conn.clone();
         tokio::spawn(async move {
-            futures::executor::block_on(events::DataHandler::requests(session_c, api::StreamRequests { requests: req.into_inner().requests }));
+            futures::executor::block_on(events::DataHandler::requests(
+                session_c,
+                StreamRequests {
+                    requests: req.into_inner().requests,
+                },
+            ));
         });
 
         let init_c = conn.clone();
         tokio::spawn(async move {
-            let _ = init_c.send_single_data(api::stream_response::Data::ConnectionId(api::ConnectionId{
-                id: init_c.id().to_string()
-            })).await;
+            init_c
+                .send_single_data(builders::Response::connection_id_stream(&init_c.id()))
+                .await
+                .expect("Server.Connection: Error while sending initial connection_id");
             // while let Some(result) = in_stream.next().await {
             //     match result {
             //         Ok(v) => events::DataHandler::requests(conn.clone(), v).await,
@@ -70,12 +73,16 @@ impl Api for APIService {
     ) -> Result<Response<None>, Status> {
         let inreq = request.into_inner();
         let connection_id = inreq.connection_id.unwrap().id;
-
         match Uuid::from_str(&connection_id) {
             Ok(cid) => match self.state.get_connection_by_id(cid) {
                 Some(conn) => {
-                    let reply = api::None {};
-                    futures::executor::block_on(events::DataHandler::requests(conn.clone(), api::StreamRequests { requests: inreq.requests }));                    
+                    let reply = None {};
+                    futures::executor::block_on(events::DataHandler::requests(
+                        conn.clone(),
+                        StreamRequests {
+                            requests: inreq.requests,
+                        },
+                    ));
                     Ok(Response::new(reply))
                 }
                 None => Err(Status::not_found("Connection not found")),

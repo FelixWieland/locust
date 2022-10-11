@@ -1,5 +1,5 @@
 use siot_core::{server::APIService, state::GlobalState};
-use siot_core::server::api::api_server::ApiServer;
+use siot_core::api::api_server::ApiServer;
 use tonic::transport::Server;
 use std::{sync::Arc};
 

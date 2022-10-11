@@ -37,7 +37,7 @@ pub struct Node<T> {
     // a node can depend on multiple other nodes
 
     // dependencies: Vec<Arc<Mutex<<Self>>>,
-    listeners: DashMap<Uuid, Sender<Option<Value<T>>>>
+    subscribers: DashMap<Uuid, Sender<Option<Value<T>>>>
 }
 
 impl<T> Node<T> where T: Clone + std::cmp::PartialEq + std::fmt::Debug {
@@ -48,7 +48,7 @@ impl<T> Node<T> where T: Clone + std::cmp::PartialEq + std::fmt::Debug {
 
             notify_change_option: NotifyChangeOptions::Value,
 
-            listeners: DashMap::new()
+            subscribers: DashMap::new()
         }
     }
 
@@ -59,7 +59,7 @@ impl<T> Node<T> where T: Clone + std::cmp::PartialEq + std::fmt::Debug {
     /**
      * value returns a copy of the value that is currently stored in the node
      */
-    async fn value(&self) -> Option<Value<T>> {
+    pub async fn value(&self) -> Option<Value<T>> {
         let v = self.value.lock().await;
         v.clone()
     }
@@ -80,7 +80,7 @@ impl<T> Node<T> where T: Clone + std::cmp::PartialEq + std::fmt::Debug {
         }
         *v = new_value.clone();
 
-        for listener in self.listeners.iter() {
+        for listener in self.subscribers.iter() {
             if let Err(err) = listener.value().clone().send(new_value.clone()).await {
                 println!("Node.update_value: Error while sending to subscribers - {:?}", err)
             }
@@ -90,9 +90,9 @@ impl<T> Node<T> where T: Clone + std::cmp::PartialEq + std::fmt::Debug {
     /**
      * 
      */
-    pub async fn listen(&self, receiver_id: &Uuid) -> Receiver<Option<Value<T>>> {
+    pub async fn subscribe(&self, receiver_id: &Uuid) -> Receiver<Option<Value<T>>> {
         let (sender, receiver) = mpsc::channel::<Option<Value<T>>>(128);
-        self.listeners.insert(receiver_id.clone(), sender.clone());
+        self.subscribers.insert(receiver_id.clone(), sender.clone());
 
         // TODO: refactor this
         let v = self.value.lock().await;
@@ -101,8 +101,8 @@ impl<T> Node<T> where T: Clone + std::cmp::PartialEq + std::fmt::Debug {
         receiver
     }
 
-    pub async fn disconnect(&self, receiver_id: &Uuid) {
-        self.listeners.remove(receiver_id);
+    pub async fn unsubscribe(&self, receiver_id: &Uuid) {
+        self.subscribers.remove(receiver_id);
     }
 
 }

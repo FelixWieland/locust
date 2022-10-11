@@ -3,7 +3,7 @@ use std::{str::FromStr, sync::Arc, vec};
 use chrono::Utc;
 use dashmap::{DashMap, DashSet};
 use futures::future::join_all;
-use prost_types::{Any, Timestamp};
+use prost_types::{Any};
 use tokio::sync::{
     mpsc::{self, error::SendError, Receiver, Sender},
     Mutex,
@@ -12,15 +12,12 @@ use tonic::Status;
 use uuid::Uuid;
 
 use crate::{
-    heartbeat,
-    runtime::{self, node::Value},
-    server::{
-        self,
-        api::{
-            AquireSession, CreateNode, Heartbeat, NodeValue, StreamRequests, StreamResponse,
-            StreamResponses, UpdateNodeValue,
-        },
+    api,
+    api::{
+        AquireSession, CreateNode, Heartbeat, StreamRequests, StreamResponses, UpdateNodeValue,
     },
+    builders, heartbeat,
+    runtime::{self, node::Value},
     session::Session,
     state::GlobalState,
 };
@@ -102,17 +99,18 @@ impl Connection {
         };
         *l = Some(latency_ms);
 
+        self.reset_session_lifetime().await;
+
+        self.send_single_data(builders::Response::heartbeat_stream(server_beat))
+            .await
+            .expect("error sending heartbeat")
+    }
+
+    pub async fn reset_session_lifetime(&self) {
         let m = self.session.lock().await;
         if m.as_ref().is_some() {
             m.as_ref().unwrap().reset_lifetime().await;
         }
-        drop(m);
-
-        self.send_single_data(server::api::stream_response::Data::Heartbeat(Heartbeat {
-            timestamp: Some(server_beat),
-        }))
-        .await
-        .expect("error sending heartbeat")
     }
 
     pub async fn send(
@@ -126,99 +124,16 @@ impl Connection {
 
     pub async fn send_single_data(
         &self,
-        data: server::api::stream_response::Data,
+        data: api::StreamResponse,
     ) -> Result<(), SendError<Result<StreamResponses, Status>>> {
-        self.send(Ok(StreamResponses {
-            responses: [StreamResponse { data: Some(data) }].to_vec(),
-        }))
-        .await
+        self.send(Ok(builders::Response::stream_responses([data].to_vec())))
+            .await
     }
 
     pub fn listen(&self) -> Receiver<StreamRequests> {
         let (sender, receiver) = mpsc::channel::<StreamRequests>(128);
         self.receiver.insert(Uuid::new_v4(), sender);
         receiver
-    }
-
-    pub async fn create_node(
-        self: Arc<Self>,
-        create_node: CreateNode,
-    ) -> Arc<runtime::node::Node<Any>> {
-        let data  = match create_node.value.unwrap() {
-            server::api::create_node::Value::Some(s) => s.data,
-            server::api::create_node::Value::None(_) => None,
-        };
-        let n = self.global_state.create_node(data);
-        println!("Connection.create_node: node id - {:?}", n.id());
-        // we always listen to the node we just created
-        self.listen_to_node(n.id()).await;
-        n
-    }
-
-    pub async fn update_node_value(self: Arc<Self>, update_node_value: UpdateNodeValue) {
-        match Uuid::from_str(&update_node_value.id) {
-            Ok(node_id) => {
-                let n = self
-                    .global_state
-                    .update_node_value(
-                        &node_id,
-                        Some(Value {
-                            value: update_node_value.data.unwrap(),
-                            timestamp: Utc::now(),
-                        }),
-                    )
-                    .await;
-                match n {
-                    Some(n) => println!("Connection.update_node_value: node id - {:?}", n.id()),
-                    None => {}
-                }
-            }
-            Err(err) => println!(
-                "Connection.update_node_value: Could not parse id - {:?}",
-                err
-            ),
-        }
-    }
-
-    pub async fn listen_to_node(self: Arc<Self>, node_id: Uuid) {
-        // first we need to decide if we listens as a session or as a connection
-        let session = self.session.lock().await;
-        if let Some(session) = session.as_ref() {
-            session.clone().listen_to_node(node_id).await;
-            drop(session);
-        } else {
-            drop(session);
-            if let Some(receiver) = self.global_state.listen_to_node(&self.id, &node_id).await {
-                self.subscribed_node_ids.insert(node_id);
-                tokio::spawn(async move {
-                    let mut stream = ReceiverStream::new(receiver);
-                    while let Some(result) = stream.next().await {
-                        let node = match result {
-                            Some(v) => server::api::Node {
-                                id: node_id.to_string(),
-                                value: Some(server::api::node::Value::Some(NodeValue {
-                                    timestamp: Some(Timestamp {
-                                        seconds: v.timestamp.timestamp(),
-                                        nanos: v.timestamp.timestamp_subsec_nanos() as i32,
-                                    }),
-                                    data: Some(v.value),
-                                })),
-                            },
-                            None => server::api::Node {
-                                id: node_id.to_string(),
-                                value: None,
-                            },
-                        };
-                        let err = self
-                            .send_single_data(server::api::stream_response::Data::Node(node))
-                            .await;
-                        if let Err(err) = err {
-                            println!("Connection.listen_to_node: received error - {:?}", err);
-                        }
-                    }
-                });
-            }
-        }
     }
 
     pub async fn set_session(&self, session: Option<Arc<Session>>) {
@@ -251,14 +166,85 @@ impl Connection {
             Err(_) => {
                 // error in parsing uuid -> create new session
                 self.aquire_new_session().await
-            },
+            }
         }
     }
 
     pub async fn aquire_session(self: Arc<Self>, aquire_session: AquireSession) {
         match aquire_session.data.unwrap() {
-            server::api::aquire_session::Data::None(_) => self.aquire_new_session().await,
-            server::api::aquire_session::Data::SessionToken(session_token) => self.aquire_existing_session(session_token).await
+            api::aquire_session::Data::None(_) => self.aquire_new_session().await,
+            api::aquire_session::Data::SessionToken(session_token) => {
+                self.aquire_existing_session(session_token).await
+            }
+        }
+    }
+
+    pub async fn create_node(
+        self: Arc<Self>,
+        create_node: CreateNode,
+    ) -> Arc<runtime::node::Node<Any>> {
+        let data = match create_node.value.unwrap() {
+            api::create_node::Value::Some(s) => s.data,
+            api::create_node::Value::None(_) => None,
+        };
+        let n = self.global_state.create_node(data);
+        println!("Connection.create_node: node id - {:?}", n.id());
+        // we always listen to the node we just created
+        self.subscribe_to_node(n.id()).await;
+        n
+    }
+
+    pub async fn update_node_value(self: Arc<Self>, update_node_value: UpdateNodeValue) {
+        match Uuid::from_str(&update_node_value.id) {
+            Ok(node_id) => {
+                let n = self
+                    .global_state
+                    .update_node_value(
+                        &node_id,
+                        Some(Value {
+                            value: update_node_value.data.unwrap(),
+                            timestamp: Utc::now(),
+                        }),
+                    )
+                    .await;
+                match n {
+                    Some(n) => println!("Connection.update_node_value: node id - {:?}", n.id()),
+                    None => {}
+                }
+            }
+            Err(err) => println!(
+                "Connection.update_node_value: Could not parse id - {:?}",
+                err
+            ),
+        }
+    }
+
+    pub async fn subscribe_to_node(self: Arc<Self>, node_id: Uuid) {
+        // first we need to decide if we listens as a session or as a connection
+        let session = self.session.lock().await;
+        if let Some(session) = session.as_ref() {
+            session.clone().subscribe_to_node(node_id).await;
+            drop(session);
+        } else {
+            drop(session);
+            let receiver = self
+                .global_state
+                .subscribe_to_node(&self.id, &node_id)
+                .await;
+            if let Some(receiver) = receiver {
+                self.subscribed_node_ids.insert(node_id);
+                tokio::spawn(async move {
+                    let mut stream = ReceiverStream::new(receiver);
+                    while let Some(data) = stream.next().await {
+                        let err = self
+                            .send_single_data(builders::Response::node_stream(&node_id, data))
+                            .await;
+                        if let Err(err) = err {
+                            println!("Connection.listen_to_node: received error - {:?}", err);
+                        }
+                    }
+                });
+            }
         }
     }
 
@@ -275,7 +261,9 @@ impl Connection {
         let mut promises = vec![];
         for node_id in self.subscribed_node_ids.iter() {
             promises.push(async move {
-                self.global_state.disconnect_from_node(&self.id, node_id.key()).await
+                self.global_state
+                    .unsubscribe_from_node(&self.id, node_id.key())
+                    .await
             })
         }
         join_all(promises).await;

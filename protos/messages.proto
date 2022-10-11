@@ -57,7 +57,7 @@ message AquireSession {
 
 message Session {
     string sessionToken = 1;
-    int32 active_connections = 2;
+    uint32 active_connections = 2;
 }
 
 message Node {

@@ -4,8 +4,8 @@ use futures::future::join_all;
 use tonic::Status;
 use futures::{self, FutureExt}; 
 
-use crate::server::api::{AquireSession, CreateNode, UpdateNodeValue};
-use crate::{connection::Connection, server::api, server::api::StreamRequests};
+use crate::api::{AquireSession, CreateNode, UpdateNodeValue};
+use crate::{connection::Connection, api, api::StreamRequests};
 use crate::events::api::{ Heartbeat };
 
 pub struct DataHandler {}

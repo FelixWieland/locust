@@ -181,7 +181,7 @@ export interface Session {
      */
     sessionToken: string;
     /**
-     * @generated from protobuf field: int32 active_connections = 2;
+     * @generated from protobuf field: uint32 active_connections = 2;
      */
     activeConnections: number;
 }
@@ -774,7 +774,7 @@ class Session$Type extends MessageType<Session> {
     constructor() {
         super("api.Session", [
             { no: 1, name: "sessionToken", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 2, name: "active_connections", kind: "scalar", T: 5 /*ScalarType.INT32*/ }
+            { no: 2, name: "active_connections", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
         ]);
     }
     create(value?: PartialMessage<Session>): Session {
@@ -792,8 +792,8 @@ class Session$Type extends MessageType<Session> {
                 case /* string sessionToken */ 1:
                     message.sessionToken = reader.string();
                     break;
-                case /* int32 active_connections */ 2:
-                    message.activeConnections = reader.int32();
+                case /* uint32 active_connections */ 2:
+                    message.activeConnections = reader.uint32();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -810,9 +810,9 @@ class Session$Type extends MessageType<Session> {
         /* string sessionToken = 1; */
         if (message.sessionToken !== "")
             writer.tag(1, WireType.LengthDelimited).string(message.sessionToken);
-        /* int32 active_connections = 2; */
+        /* uint32 active_connections = 2; */
         if (message.activeConnections !== 0)
-            writer.tag(2, WireType.Varint).int32(message.activeConnections);
+            writer.tag(2, WireType.Varint).uint32(message.activeConnections);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
