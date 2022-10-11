@@ -36,17 +36,9 @@ type NodeData = {
 
 function node(id: UUID): NodeData | null {
 
-    const nodeData = createMemo(() => {
-        return nodes[id] || null
-    })
+    const nodeData = createMemo(() => nodes[id] || null)
 
-    const unv = (data: Any) => {
-        const up = UpdateNodeValue.create()
-        up.id = id
-        up.data = data
-        connection()?.updateNodeValue(up)
-    }
-
+    const unv = (data: Any) => connection()?.updateNodeValue(id, data)
     const updateValue = {
         raw: (data: any, mimeType: NodeDataMimeTypes = '') => unv(Serialize.raw(data, mimeType)),
         text: (data: string) => unv(Serialize.text(data)),
@@ -77,13 +69,6 @@ function node(id: UUID): NodeData | null {
 function Node(props: NodeProps) {
     const id = props.id
     const n = node(id)
-
-    createEffect(() => {
-        // when the subscribe flag is true we cant unsubscribe manually ... how to fix
-        // if (!subscribed() && subscribe) {
-        //     connection()?.subscribeToNode(id)
-        // }
-    })
 
     return n !== null ? props.children(n) : null
 }

@@ -6,6 +6,7 @@ import * as heartbeat from './time'
 import { readSessionToken, setLatency, setSession, updateNodes, writeSessionToken } from "./store";
 import { assure } from "./util";
 import { produce } from "solid-js/store";
+import { Any } from "./api/google/protobuf/any";
 
 class Connection {
     private _server: apiClient;
@@ -85,8 +86,11 @@ class Connection {
         await this.sendSingleData(sr)
     }
 
-    async updateNodeValue(up: UpdateNodeValue) {
+    async updateNodeValue(nodeID: string, data: Any) {
         const sr = StreamRequest.create()
+        const up = UpdateNodeValue.create()
+        up.id = nodeID
+        up.data = data
         sr.data = {
             oneofKind: "updateNodeValue",
             updateNodeValue: up
@@ -94,12 +98,12 @@ class Connection {
         await this.sendSingleData(sr)
     }
 
-    async subscribeToNode(node_id: string) {
+    async subscribeToNode(nodeID: string) {
         const sr = StreamRequest.create()
         sr.data = {
             oneofKind: "subscribeToNode",
             subscribeToNode: {
-                id: node_id
+                id: nodeID
             }
         }
         await this.sendSingleData(sr)
