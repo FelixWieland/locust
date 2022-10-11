@@ -67,7 +67,7 @@ impl<T> From<Receiver<T>> for APIReceiverStream<T> {
 impl<T> Drop for APIReceiverStream<T> {
     fn drop(&mut self) {
         if let Some(conn) = &self.conn {
-            futures::executor::block_on(conn.close())
+            futures::executor::block_on(conn.close());
         }
     }
 }

@@ -100,7 +100,7 @@ impl Connection {
         };
         *l = Some(latency_ms);
 
-        self.reset_session_lifetime().await;
+        // self.reset_session_lifetime().await;
 
         self.send_single_data(builders::Response::heartbeat_stream(server_beat))
             .await
@@ -260,9 +260,10 @@ impl Connection {
                             .send_single_data(builders::Response::node_stream(&node_id, data))
                             .await;
                         if let Err(err) = err {
-                            println!("Connection.listen_to_node: received error - {:?}", err);
+                            println!("Connection.subscribe_to_node: received error - {:?}", err);
                         }
                     }
+                    println!("Connection.subscribe_to_node: stopped")
                 });
                 // when we subscribe to a node without a session we publish the information to the client
                 self.publish_self().await;

@@ -1,3 +1,4 @@
+import { Accessor, createEffect, createMemo, createSignal, Setter } from "solid-js"
 import { Any } from "./api/google/protobuf/any"
 import { Timestamp } from "./api/google/protobuf/timestamp"
 import { Parse } from "./mime"
@@ -6,7 +7,7 @@ export type UUID = string
 
 export type NodeT = {
     id: UUID
-    value: NodeValue
+    value: ReturnType<typeof NodeValue>
 }
 
 export enum ConnectionState {
@@ -27,7 +28,6 @@ export type ConnectionOptions = {
     sidebar?: {
         disabled?: boolean,
         open?: boolean,
-
     },
 }
 
@@ -53,72 +53,30 @@ export const allNodeDataMimeTypes = [
 
 export type NodeDataMimeTypes = typeof allNodeDataMimeTypes[number]
 
-export class NodeValue {
-    private _timestamp?: number
-    private _value?: Any
+export function NodeValue(ts?: number, value?: Any) {
+    const [read, set] = createSignal({
+        _timestamp: ts,
+        _value: value,
+    })
 
-    constructor(ts: Timestamp, value?: Any) {
-        this._timestamp = ts ? Math.floor(new Date(Number(ts.seconds) * 1000 + (Math.floor(ts.nanos / 1000))).valueOf() / 1000) : undefined
-        this._value = value
-    }
+    const def = createMemo(() => <T>(fn: (a: Any) => T, def: T) => read()._value ? fn(read()._value) : def)
 
-    default<T>(fn: (a: Any) => T, def: T): T {
-        return this._value ? fn(this._value) : def
-    }
-
-    mime(): NodeDataMimeTypes {
-        return (this._value ? this._value.typeUrl : '') as NodeDataMimeTypes
-    }
-
-    timestamp() {
-        return (this._timestamp ? this._timestamp : -1)
-    }
-
-    raw() {
-        return this.default(Parse.raw, new Uint8Array())
-    }
-
-    text() {
-        return this.default(Parse.text, '')
-    }
-
-    number() {
-        return this.default(Parse.number, NaN)
-    }
-
-    boolean() {
-        return this.default(Parse.boolean, null)
-    }
-
-    json<T = any>() {
-        return this.default(Parse.json, null) as T
-    }
-
-    textCsv() {
-        return this.default(Parse.textCsv, '');
-    }
-
-    textJavascript() {
-        return this.default(Parse.textJavascript, '')
-    }
-
-    textHtml() {
-        return this.default(Parse.textHtml, '')
-    }
-
-    applicationXml() {
-        return this.default(Parse.applicationXml, null)
-    }
-
-    imageJpeg() {
-        return this.default(Parse.imageJpeg, new Uint8Array())
-    }
-
-    imagePng() {
-        return this.default(Parse.imagePng, new Uint8Array())
-    }
-
-    imageSvgXml() {
-        return this.default(Parse.imageSvgXml, null)
-    }
+    return createMemo(() => ({
+        read: read,
+        set: set,
+        mime: () => (read()._value ? read()._value.typeUrl : '') as NodeDataMimeTypes,
+        timestamp: () => (read()._timestamp ? this.read()._timestamp : -1),
+        raw: () => def()(Parse.raw, new Uint8Array()),
+        text: () => def()(Parse.text, ''),
+        number: () => def()(Parse.number, NaN),
+        boolean: () => def()(Parse.boolean, null),
+        json: <T = any>() => def()(Parse.json, null) as T,
+        textCsv: () =>def()(Parse.textCsv, ''),
+        textJavascript: () => def()(Parse.textJavascript, ''),
+        textHtml: () => def()(Parse.textHtml, ''),
+        applicationXml: () => def()(Parse.applicationXml, null),
+        imageJpeg: () => def()(Parse.imageJpeg, new Uint8Array()),
+        imagePng: () => def()(Parse.imagePng, new Uint8Array()),
+        imageSvgXml: () => def()(Parse.imageSvgXml, null)
+    }))
 }

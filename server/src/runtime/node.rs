@@ -85,7 +85,7 @@ where
      */
     pub async fn update_value(&self, new_value: Option<Value<T>>) {
         let mut v = self.value.lock().await;
-        *v = new_value.clone();
+        
 
         let mut time_changed = true;
         let mut value_changed = true;
@@ -95,7 +95,8 @@ where
                 time_changed = sv.timestamp != new_value.timestamp;
             }
         }
-        
+
+        *v = new_value.clone();
         drop(v);
 
         if !self.should_notify(time_changed, value_changed) {
@@ -133,7 +134,8 @@ where
     }
 
     pub async fn unsubscribe(&self, receiver_id: &Uuid) {
-        self.subscribers.remove(receiver_id);
+        let data = self.subscribers.remove(receiver_id);
+        drop(data)
     }
 }
 

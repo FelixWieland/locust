@@ -54,7 +54,7 @@ function ConnectionManager(props: ConnectionProps) {
     function getInitialRequests(): Array<StreamRequest> {
         const initialRequests: Array<StreamRequest> = []
 
-        if (props.options.session) {
+        if (props.options.session?.aquire) {
             const sr = StreamRequest.create()
             const ar = aquireSession()
             sr.data = {
@@ -101,7 +101,7 @@ function ConnectionManager(props: ConnectionProps) {
         // stream.responses.onNext(console.log)
         stream.responses.onMessage((message) => {
             message.responses.forEach(response => {
-                if (response.data.oneofKind === "connection") {
+                if (response.data.oneofKind === "connection" && c === null) {
                     // WHY THE FUCK DO I NEED TO DO THIS TYPESCRITP????!=!"§="I§ HOLY
                     const data = (response.data as unknown as any).connection as ConnectionT
                     c = new Connection(data.id, apiServer, props.options)

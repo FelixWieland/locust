@@ -133,13 +133,20 @@ class Connection {
     private onNode(data: Node) {
         console.log(`Node: received node: ${data.id}`)
         updateNodes(produce(nodes => {
+            const ts = (data?.value as any)?.some?.timestamp
+            const _timestamp = ts ? Math.floor(new Date(Number(ts.seconds) * 1000 + (Math.floor(ts.nanos / 1000))).valueOf() / 1000) : undefined
+            const _value = (data?.value as any)?.some?.data
+
             if (nodes[data.id]) {
                 // we already have the node so we just update the value
-                nodes[data.id].value = new NodeValueC((data?.value as any)?.some?.timestamp, (data?.value as any)?.some?.data)
+                nodes[data.id].value().set({
+                    _timestamp: _timestamp,
+                    _value: _value
+                })
             } else {
                 nodes[data.id] = {
                     id: data.id,
-                    value: new NodeValueC((data?.value as any)?.some?.timestamp, (data?.value as any)?.some?.data)
+                    value: NodeValueC(_timestamp, _value)
                 }
             }
         }))

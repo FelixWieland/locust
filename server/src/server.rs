@@ -4,7 +4,6 @@ use tonic::{codegen::futures_core::Stream, Request, Response, Status};
 use uuid::Uuid;
 
 use crate::api::{api_server::Api, None, StreamRequests, StreamResponses, UnaryStreamRequest};
-use crate::builders;
 use crate::{events, state::GlobalState, util::api_receiver_stream::APIReceiverStream};
 
 #[derive(Debug)]
@@ -32,6 +31,11 @@ impl Api for APIService {
         println!("Connection: new incoming connection");
         let conn = self.state.clone().add_connection(tx);
 
+        let init_c = conn.clone();
+        tokio::spawn(async move {
+            init_c.publish_self().await
+        });
+
         let session_c = conn.clone();
         tokio::spawn(async move {
             futures::executor::block_on(events::DataHandler::requests(
@@ -40,19 +44,6 @@ impl Api for APIService {
                     requests: req.into_inner().requests,
                 },
             ));
-        });
-
-        let init_c = conn.clone();
-        tokio::spawn(async move {
-            init_c.publish_self().await
-            // while let Some(result) = in_stream.next().await {
-            //     match result {
-            //         Ok(v) => events::DataHandler::requests(conn.clone(), v).await,
-            //         Err(err) => events::ErrorHandler::error(conn.clone(), err)
-            //     }
-            // }
-            // // connection ended -> remove it
-            // state.remove_connection(conn.id());
         });
 
         let out_stream = APIReceiverStream::new(rx, Some(conn));

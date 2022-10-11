@@ -73,17 +73,6 @@ impl Session {
 
     pub async fn remove_connection(&self, connection_id: &Uuid) {
         self.connections.remove(connection_id);
-        // here we need to handle the unsubscribe of subscribed nodes
-        let mut promises = vec![];
-        for node_id in self.subscribed_node_ids.iter() {
-            promises.push(async move {
-                self.global_state
-                    .unsubscribe_from_node(connection_id, &node_id)
-                    .await;
-                self.subscribed_node_ids.remove(&node_id)
-            });
-        }
-        join_all(promises).await;
         // every time a connection disconnects we publish the session
         self.publish_self().await;
     }
@@ -125,9 +114,10 @@ impl Session {
                         .send_single_data(builders::Response::node_stream(&node_id, data))
                         .await;
                     if let Err(err) = err {
-                        println!("Connection.listen_to_node: received error - {:?}", err);
+                        println!("Session.subscribe_to_node: received error - {:?}", err);
                     }
                 }
+                println!("Session.subscribe_to_node: stopped");
             });
             // when we subscribe to a new node we publish that information to the clients over the session
             self.publish_self().await;
