@@ -1,11 +1,11 @@
-use dashmap::DashMap;
-use uuid::Uuid;
-use std::{sync::Arc};
-use tokio::sync::{Mutex, mpsc, mpsc::Sender, mpsc::Receiver};
 use chrono::{DateTime, Utc};
+use dashmap::DashMap;
+use std::sync::Arc;
+use tokio::sync::{mpsc, mpsc::Receiver, mpsc::Sender, Mutex};
+use uuid::Uuid;
 
 /**
- * NotifyChangeOptions are responsible to control when the node 
+ * NotifyChangeOptions are responsible to control when the node
  * should notify/stream its value to the nodes who depend on it
  */
 #[derive(Debug)]
@@ -13,34 +13,37 @@ pub enum NotifyChangeOptions {
     None,
     Timestamp,
     Value,
-    TimestampValue
+    TimestampValue,
 }
 
 /**
  * A node represents a combination of the following:
  * - Sensor
  * - Actor
- * 
+ *
  * - Storage
  * - Logic
- * 
+ *
  * The Storage and Logic implementations can change depending on the need
- * 
- * Basically its a variable with reactive capabilities. 
+ *
+ * Basically its a variable with reactive capabilities.
  */
 #[derive(Debug)]
 pub struct Node<T> {
     id: Uuid,
     value: Arc<Mutex<Option<Value<T>>>>,
-    
+
     notify_change_option: NotifyChangeOptions,
     // a node can depend on multiple other nodes
 
     // dependencies: Vec<Arc<Mutex<<Self>>>,
-    subscribers: DashMap<Uuid, Sender<Option<Value<T>>>>
+    subscribers: DashMap<Uuid, Sender<Option<Value<T>>>>,
 }
 
-impl<T> Node<T> where T: Clone + std::cmp::PartialEq + std::fmt::Debug {
+impl<T> Node<T>
+where
+    T: Clone + std::cmp::PartialEq + std::fmt::Debug,
+{
     pub fn new(value: Option<T>) -> Node<T> {
         Node {
             id: Uuid::new_v4(),
@@ -48,13 +51,13 @@ impl<T> Node<T> where T: Clone + std::cmp::PartialEq + std::fmt::Debug {
 
             notify_change_option: NotifyChangeOptions::Value,
 
-            subscribers: DashMap::new()
+            subscribers: DashMap::new(),
         }
     }
 
     pub fn id(&self) -> uuid::Uuid {
         self.id
-    } 
+    }
 
     /**
      * value returns a copy of the value that is currently stored in the node
@@ -82,13 +85,16 @@ impl<T> Node<T> where T: Clone + std::cmp::PartialEq + std::fmt::Debug {
 
         for listener in self.subscribers.iter() {
             if let Err(err) = listener.value().clone().send(new_value.clone()).await {
-                println!("Node.update_value: Error while sending to subscribers - {:?}", err)
+                println!(
+                    "Node.update_value: Error while sending to subscribers - {:?}",
+                    err
+                )
             }
         }
     }
 
     /**
-     * 
+     *
      */
     pub async fn subscribe(&self, receiver_id: &Uuid) -> Receiver<Option<Value<T>>> {
         let (sender, receiver) = mpsc::channel::<Option<Value<T>>>(128);
@@ -104,7 +110,6 @@ impl<T> Node<T> where T: Clone + std::cmp::PartialEq + std::fmt::Debug {
     pub async fn unsubscribe(&self, receiver_id: &Uuid) {
         self.subscribers.remove(receiver_id);
     }
-
 }
 
 /**
@@ -113,14 +118,14 @@ impl<T> Node<T> where T: Clone + std::cmp::PartialEq + std::fmt::Debug {
 #[derive(Clone, Debug)]
 pub struct Value<T> {
     pub value: T,
-    pub timestamp: DateTime<Utc>
+    pub timestamp: DateTime<Utc>,
 }
 
 impl<T> Value<T> {
     fn new(value: T) -> Value<T> {
         Value {
             value,
-            timestamp: Utc::now()
+            timestamp: Utc::now(),
         }
     }
 }

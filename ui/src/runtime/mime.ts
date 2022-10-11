@@ -160,7 +160,7 @@ class Parse {
 
     static imageSvgXml(data: Any): SVGElement {
         return new DOMParser().parseFromString(new TextDecoder().decode(data.value), 'image/svg+xml') as unknown as SVGElement
-   }
+    }
 }
 
 export {

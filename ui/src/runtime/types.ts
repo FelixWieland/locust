@@ -24,11 +24,10 @@ export type ConnectionOptions = {
         storage?: Storage
     }
 
-
     sidebar?: {
         disabled?: boolean,
         open?: boolean,
-        
+
     },
 }
 
@@ -49,7 +48,7 @@ export const allNodeDataMimeTypes = [
     'application/xml',
     'image/jpeg',
     'image/png',
-    'image/svg+xml'   
+    'image/svg+xml'
 ] as const
 
 export type NodeDataMimeTypes = typeof allNodeDataMimeTypes[number]

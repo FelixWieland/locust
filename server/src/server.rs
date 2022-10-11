@@ -3,13 +3,9 @@ use tokio::sync::mpsc;
 use tonic::{codegen::futures_core::Stream, Request, Response, Status};
 use uuid::Uuid;
 
+use crate::api::{api_server::Api, None, StreamRequests, StreamResponses, UnaryStreamRequest};
 use crate::builders;
 use crate::{events, state::GlobalState, util::api_receiver_stream::APIReceiverStream};
-
-use crate::api::{
-    api_server::Api, stream_response, ConnectionId, None, StreamRequests, StreamResponses,
-    UnaryStreamRequest,
-};
 
 #[derive(Debug)]
 pub struct APIService {

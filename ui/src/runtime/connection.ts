@@ -12,9 +12,9 @@ class Connection {
     private _server: apiClient;
 
     private _id: UUID
-    
+
     private _lastHeartbeat: null | Heartbeat;
-    
+
     private _latencyMs: null | number
 
     private _options: ConnectionOptions
@@ -87,7 +87,7 @@ class Connection {
         }
         await this.sendSingleData(sr)
     }
-    
+
     async updateNodeValue(up: UpdateNodeValue) {
         const sr = StreamRequest.create()
         sr.data = {
@@ -108,7 +108,7 @@ class Connection {
             this.onSession((response.data as unknown as any).session as Session)
         } else if (assure(response, "node")) {
             this.onNode((response.data as unknown as any).node as Node)
-        } 
+        }
     }
 
     private onHeartbeat(data: Heartbeat) {

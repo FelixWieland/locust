@@ -1,15 +1,15 @@
-use tokio_stream::Stream;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::task::{Context, Poll};
 use tokio::sync::mpsc::Receiver;
+use tokio_stream::Stream;
 
 use crate::connection::Connection;
 
 #[derive(Debug)]
 pub struct APIReceiverStream<T> {
     inner: Receiver<T>,
-    conn: Option<Arc<Connection>>
+    conn: Option<Arc<Connection>>,
 }
 
 impl<T> APIReceiverStream<T> {

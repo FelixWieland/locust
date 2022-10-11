@@ -15,19 +15,4 @@ export const allNodes = createMemo(() => Object.keys(nodes).map(key => nodes[key
 
 export const readSessionToken = (storage: Storage) => storage.getItem("_locust_session_token")
 export const writeSessionToken = (token: string, storage: Storage) => storage.setItem("_locust_session_token", token)
-// export let dropIds = [];
-
-// updateNodes(produce(o => {
-//     for (let i = 0; i < 100; i++) {
-//         const id = btoa(Math.random().toString()).substring(10, 15);
-//         dropIds.push(id)
-//         o[id] = {
-//             id,
-//             value: {
-//                 timestamp: Date.now(),
-//                 value: 0
-//             }
-//         }
-//     }
-// }))
 

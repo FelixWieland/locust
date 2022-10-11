@@ -158,10 +158,10 @@ function ConnectionManager(props: ConnectionProps) {
             />
         </span>
         {!props.options.sidebar?.disabled && (
-            <Sidebar 
-                open={open()} 
-                options={props.options} 
-                onOptionsChange={props.onOptionChange} 
+            <Sidebar
+                open={open()}
+                options={props.options}
+                onOptionsChange={props.onOptionChange}
             />
         )}
     </>)
