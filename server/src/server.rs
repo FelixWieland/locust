@@ -44,10 +44,7 @@ impl Api for APIService {
 
         let init_c = conn.clone();
         tokio::spawn(async move {
-            init_c
-                .send_single_data(builders::Response::connection_id_stream(&init_c.id()))
-                .await
-                .expect("Server.Connection: Error while sending initial connection_id");
+            init_c.publish_self().await
             // while let Some(result) = in_stream.next().await {
             //     match result {
             //         Ok(v) => events::DataHandler::requests(conn.clone(), v).await,
@@ -68,7 +65,7 @@ impl Api for APIService {
         request: Request<UnaryStreamRequest>,
     ) -> Result<Response<None>, Status> {
         let inreq = request.into_inner();
-        let connection_id = inreq.connection_id.unwrap().id;
+        let connection_id = inreq.connection_id;
         match Uuid::from_str(&connection_id) {
             Ok(cid) => match self.state.get_connection_by_id(cid) {
                 Some(conn) => {

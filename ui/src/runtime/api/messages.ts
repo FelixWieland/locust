@@ -19,13 +19,17 @@ import { Timestamp } from "./google/protobuf/timestamp";
 export interface None {
 }
 /**
- * @generated from protobuf message api.ConnectionID
+ * @generated from protobuf message api.Connection
  */
-export interface ConnectionID {
+export interface Connection {
     /**
      * @generated from protobuf field: string id = 1;
      */
     id: string;
+    /**
+     * @generated from protobuf field: repeated string subscribedNodesIDs = 2;
+     */
+    subscribedNodesIDs: string[];
 }
 /**
  * @generated from protobuf message api.Heartbeat
@@ -115,11 +119,11 @@ export interface StreamResponse {
          */
         heartbeat: Heartbeat;
     } | {
-        oneofKind: "connectionID";
+        oneofKind: "connection";
         /**
-         * @generated from protobuf field: api.ConnectionID connectionID = 3;
+         * @generated from protobuf field: api.Connection connection = 3;
          */
-        connectionID: ConnectionID;
+        connection: Connection;
     } | {
         oneofKind: "session";
         /**
@@ -141,9 +145,9 @@ export interface StreamResponse {
  */
 export interface UnaryStreamRequest {
     /**
-     * @generated from protobuf field: api.ConnectionID connectionID = 1;
+     * @generated from protobuf field: string connectionID = 1;
      */
-    connectionID?: ConnectionID;
+    connectionID: string;
     /**
      * @generated from protobuf field: repeated api.StreamRequest requests = 2;
      */
@@ -184,6 +188,10 @@ export interface Session {
      * @generated from protobuf field: uint32 active_connections = 2;
      */
     activeConnections: number;
+    /**
+     * @generated from protobuf field: repeated string subscribedNodesIDs = 3;
+     */
+    subscribedNodesIDs: string[];
 }
 /**
  * @generated from protobuf message api.Node
@@ -288,26 +296,30 @@ class None$Type extends MessageType<None> {
  */
 export const None = new None$Type();
 // @generated message type with reflection information, may provide speed optimized methods
-class ConnectionID$Type extends MessageType<ConnectionID> {
+class Connection$Type extends MessageType<Connection> {
     constructor() {
-        super("api.ConnectionID", [
-            { no: 1, name: "id", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        super("api.Connection", [
+            { no: 1, name: "id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "subscribedNodesIDs", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ }
         ]);
     }
-    create(value?: PartialMessage<ConnectionID>): ConnectionID {
-        const message = { id: "" };
+    create(value?: PartialMessage<Connection>): Connection {
+        const message = { id: "", subscribedNodesIDs: [] };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
-            reflectionMergePartial<ConnectionID>(this, message, value);
+            reflectionMergePartial<Connection>(this, message, value);
         return message;
     }
-    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ConnectionID): ConnectionID {
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Connection): Connection {
         let message = target ?? this.create(), end = reader.pos + length;
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
                 case /* string id */ 1:
                     message.id = reader.string();
+                    break;
+                case /* repeated string subscribedNodesIDs */ 2:
+                    message.subscribedNodesIDs.push(reader.string());
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -320,10 +332,13 @@ class ConnectionID$Type extends MessageType<ConnectionID> {
         }
         return message;
     }
-    internalBinaryWrite(message: ConnectionID, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+    internalBinaryWrite(message: Connection, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
         /* string id = 1; */
         if (message.id !== "")
             writer.tag(1, WireType.LengthDelimited).string(message.id);
+        /* repeated string subscribedNodesIDs = 2; */
+        for (let i = 0; i < message.subscribedNodesIDs.length; i++)
+            writer.tag(2, WireType.LengthDelimited).string(message.subscribedNodesIDs[i]);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -331,9 +346,9 @@ class ConnectionID$Type extends MessageType<ConnectionID> {
     }
 }
 /**
- * @generated MessageType for protobuf message api.ConnectionID
+ * @generated MessageType for protobuf message api.Connection
  */
-export const ConnectionID = new ConnectionID$Type();
+export const Connection = new Connection$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class Heartbeat$Type extends MessageType<Heartbeat> {
     constructor() {
@@ -571,7 +586,7 @@ class StreamResponse$Type extends MessageType<StreamResponse> {
         super("api.StreamResponse", [
             { no: 1, name: "none", kind: "message", oneof: "data", T: () => None },
             { no: 2, name: "heartbeat", kind: "message", oneof: "data", T: () => Heartbeat },
-            { no: 3, name: "connectionID", kind: "message", oneof: "data", T: () => ConnectionID },
+            { no: 3, name: "connection", kind: "message", oneof: "data", T: () => Connection },
             { no: 4, name: "session", kind: "message", oneof: "data", T: () => Session },
             { no: 5, name: "node", kind: "message", oneof: "data", T: () => Node }
         ]);
@@ -600,10 +615,10 @@ class StreamResponse$Type extends MessageType<StreamResponse> {
                         heartbeat: Heartbeat.internalBinaryRead(reader, reader.uint32(), options, (message.data as any).heartbeat)
                     };
                     break;
-                case /* api.ConnectionID connectionID */ 3:
+                case /* api.Connection connection */ 3:
                     message.data = {
-                        oneofKind: "connectionID",
-                        connectionID: ConnectionID.internalBinaryRead(reader, reader.uint32(), options, (message.data as any).connectionID)
+                        oneofKind: "connection",
+                        connection: Connection.internalBinaryRead(reader, reader.uint32(), options, (message.data as any).connection)
                     };
                     break;
                 case /* api.Session session */ 4:
@@ -636,9 +651,9 @@ class StreamResponse$Type extends MessageType<StreamResponse> {
         /* api.Heartbeat heartbeat = 2; */
         if (message.data.oneofKind === "heartbeat")
             Heartbeat.internalBinaryWrite(message.data.heartbeat, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
-        /* api.ConnectionID connectionID = 3; */
-        if (message.data.oneofKind === "connectionID")
-            ConnectionID.internalBinaryWrite(message.data.connectionID, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* api.Connection connection = 3; */
+        if (message.data.oneofKind === "connection")
+            Connection.internalBinaryWrite(message.data.connection, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
         /* api.Session session = 4; */
         if (message.data.oneofKind === "session")
             Session.internalBinaryWrite(message.data.session, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
@@ -659,12 +674,12 @@ export const StreamResponse = new StreamResponse$Type();
 class UnaryStreamRequest$Type extends MessageType<UnaryStreamRequest> {
     constructor() {
         super("api.UnaryStreamRequest", [
-            { no: 1, name: "connectionID", kind: "message", T: () => ConnectionID },
+            { no: 1, name: "connectionID", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 2, name: "requests", kind: "message", repeat: 1 /*RepeatType.PACKED*/, T: () => StreamRequest }
         ]);
     }
     create(value?: PartialMessage<UnaryStreamRequest>): UnaryStreamRequest {
-        const message = { requests: [] };
+        const message = { connectionID: "", requests: [] };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<UnaryStreamRequest>(this, message, value);
@@ -675,8 +690,8 @@ class UnaryStreamRequest$Type extends MessageType<UnaryStreamRequest> {
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* api.ConnectionID connectionID */ 1:
-                    message.connectionID = ConnectionID.internalBinaryRead(reader, reader.uint32(), options, message.connectionID);
+                case /* string connectionID */ 1:
+                    message.connectionID = reader.string();
                     break;
                 case /* repeated api.StreamRequest requests */ 2:
                     message.requests.push(StreamRequest.internalBinaryRead(reader, reader.uint32(), options));
@@ -693,9 +708,9 @@ class UnaryStreamRequest$Type extends MessageType<UnaryStreamRequest> {
         return message;
     }
     internalBinaryWrite(message: UnaryStreamRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* api.ConnectionID connectionID = 1; */
-        if (message.connectionID)
-            ConnectionID.internalBinaryWrite(message.connectionID, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* string connectionID = 1; */
+        if (message.connectionID !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.connectionID);
         /* repeated api.StreamRequest requests = 2; */
         for (let i = 0; i < message.requests.length; i++)
             StreamRequest.internalBinaryWrite(message.requests[i], writer.tag(2, WireType.LengthDelimited).fork(), options).join();
@@ -774,11 +789,12 @@ class Session$Type extends MessageType<Session> {
     constructor() {
         super("api.Session", [
             { no: 1, name: "sessionToken", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 2, name: "active_connections", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
+            { no: 2, name: "active_connections", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 3, name: "subscribedNodesIDs", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ }
         ]);
     }
     create(value?: PartialMessage<Session>): Session {
-        const message = { sessionToken: "", activeConnections: 0 };
+        const message = { sessionToken: "", activeConnections: 0, subscribedNodesIDs: [] };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
             reflectionMergePartial<Session>(this, message, value);
@@ -794,6 +810,9 @@ class Session$Type extends MessageType<Session> {
                     break;
                 case /* uint32 active_connections */ 2:
                     message.activeConnections = reader.uint32();
+                    break;
+                case /* repeated string subscribedNodesIDs */ 3:
+                    message.subscribedNodesIDs.push(reader.string());
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -813,6 +832,9 @@ class Session$Type extends MessageType<Session> {
         /* uint32 active_connections = 2; */
         if (message.activeConnections !== 0)
             writer.tag(2, WireType.Varint).uint32(message.activeConnections);
+        /* repeated string subscribedNodesIDs = 3; */
+        for (let i = 0; i < message.subscribedNodesIDs.length; i++)
+            writer.tag(3, WireType.LengthDelimited).string(message.subscribedNodesIDs[i]);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

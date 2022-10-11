@@ -18,21 +18,27 @@ export namespace None {
   }
 }
 
-export class ConnectionID extends jspb.Message {
+export class Connection extends jspb.Message {
   getId(): string;
-  setId(value: string): ConnectionID;
+  setId(value: string): Connection;
+
+  getSubscribednodesidsList(): Array<string>;
+  setSubscribednodesidsList(value: Array<string>): Connection;
+  clearSubscribednodesidsList(): Connection;
+  addSubscribednodesids(value: string, index?: number): Connection;
 
   serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): ConnectionID.AsObject;
-  static toObject(includeInstance: boolean, msg: ConnectionID): ConnectionID.AsObject;
-  static serializeBinaryToWriter(message: ConnectionID, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): ConnectionID;
-  static deserializeBinaryFromReader(message: ConnectionID, reader: jspb.BinaryReader): ConnectionID;
+  toObject(includeInstance?: boolean): Connection.AsObject;
+  static toObject(includeInstance: boolean, msg: Connection): Connection.AsObject;
+  static serializeBinaryToWriter(message: Connection, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): Connection;
+  static deserializeBinaryFromReader(message: Connection, reader: jspb.BinaryReader): Connection;
 }
 
-export namespace ConnectionID {
+export namespace Connection {
   export type AsObject = {
     id: string,
+    subscribednodesidsList: Array<string>,
   }
 }
 
@@ -162,10 +168,10 @@ export class StreamResponse extends jspb.Message {
   hasHeartbeat(): boolean;
   clearHeartbeat(): StreamResponse;
 
-  getConnectionid(): ConnectionID | undefined;
-  setConnectionid(value?: ConnectionID): StreamResponse;
-  hasConnectionid(): boolean;
-  clearConnectionid(): StreamResponse;
+  getConnection(): Connection | undefined;
+  setConnection(value?: Connection): StreamResponse;
+  hasConnection(): boolean;
+  clearConnection(): StreamResponse;
 
   getSession(): Session | undefined;
   setSession(value?: Session): StreamResponse;
@@ -191,7 +197,7 @@ export namespace StreamResponse {
   export type AsObject = {
     none?: None.AsObject,
     heartbeat?: Heartbeat.AsObject,
-    connectionid?: ConnectionID.AsObject,
+    connection?: Connection.AsObject,
     session?: Session.AsObject,
     node?: Node.AsObject,
   }
@@ -200,17 +206,15 @@ export namespace StreamResponse {
     DATA_NOT_SET = 0,
     NONE = 1,
     HEARTBEAT = 2,
-    CONNECTIONID = 3,
+    CONNECTION = 3,
     SESSION = 4,
     NODE = 5,
   }
 }
 
 export class UnaryStreamRequest extends jspb.Message {
-  getConnectionid(): ConnectionID | undefined;
-  setConnectionid(value?: ConnectionID): UnaryStreamRequest;
-  hasConnectionid(): boolean;
-  clearConnectionid(): UnaryStreamRequest;
+  getConnectionid(): string;
+  setConnectionid(value: string): UnaryStreamRequest;
 
   getRequestsList(): Array<StreamRequest>;
   setRequestsList(value: Array<StreamRequest>): UnaryStreamRequest;
@@ -227,7 +231,7 @@ export class UnaryStreamRequest extends jspb.Message {
 
 export namespace UnaryStreamRequest {
   export type AsObject = {
-    connectionid?: ConnectionID.AsObject,
+    connectionid: string,
     requestsList: Array<StreamRequest.AsObject>,
   }
 }
@@ -271,6 +275,11 @@ export class Session extends jspb.Message {
   getActiveConnections(): number;
   setActiveConnections(value: number): Session;
 
+  getSubscribednodesidsList(): Array<string>;
+  setSubscribednodesidsList(value: Array<string>): Session;
+  clearSubscribednodesidsList(): Session;
+  addSubscribednodesids(value: string, index?: number): Session;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Session.AsObject;
   static toObject(includeInstance: boolean, msg: Session): Session.AsObject;
@@ -283,6 +292,7 @@ export namespace Session {
   export type AsObject = {
     sessiontoken: string,
     activeConnections: number,
+    subscribednodesidsList: Array<string>,
   }
 }
 

@@ -1,5 +1,6 @@
 use chrono::{DateTime, Utc};
 use dashmap::DashMap;
+use futures::future::join_all;
 use std::sync::Arc;
 use tokio::sync::{mpsc, mpsc::Receiver, mpsc::Sender, Mutex};
 use uuid::Uuid;
@@ -8,7 +9,7 @@ use uuid::Uuid;
  * NotifyChangeOptions are responsible to control when the node
  * should notify/stream its value to the nodes who depend on it
  */
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum NotifyChangeOptions {
     None,
     Timestamp,
@@ -67,24 +68,48 @@ where
         v.clone()
     }
 
+    fn should_notify(&self, time_changed: bool, value_changed: bool) -> bool {
+        if self.notify_change_option == NotifyChangeOptions::Value && value_changed {
+            true
+        } else if self.notify_change_option == NotifyChangeOptions::Timestamp && time_changed {
+            true
+        } else if self.notify_change_option == NotifyChangeOptions::TimestampValue && (value_changed || time_changed) {
+            true
+        } else {
+            false
+        }
+    }
+
     /**
      * Todo: This needs to be insanly fast ...
      */
     pub async fn update_value(&self, new_value: Option<Value<T>>) {
         let mut v = self.value.lock().await;
+        *v = new_value.clone();
 
         let mut time_changed = true;
         let mut value_changed = true;
         if let Some(new_value) = new_value.clone() {
             if let Some(sv) = v.as_ref() {
-                value_changed = sv.value == new_value.value;
-                time_changed = sv.timestamp == new_value.timestamp;
+                value_changed = sv.value != new_value.value;
+                time_changed = sv.timestamp != new_value.timestamp;
             }
         }
-        *v = new_value.clone();
+        
+        drop(v);
 
+        if !self.should_notify(time_changed, value_changed) {
+            return
+        }
+
+        let mut promises = vec![];
         for listener in self.subscribers.iter() {
-            if let Err(err) = listener.value().clone().send(new_value.clone()).await {
+            let v = new_value.clone();
+            promises.push(async move { listener.value().clone().send(v).await });
+        }
+        let results = join_all(promises).await;
+        for result in results {
+            if let Err(err) = result {
                 println!(
                     "Node.update_value: Error while sending to subscribers - {:?}",
                     err
@@ -119,13 +144,4 @@ where
 pub struct Value<T> {
     pub value: T,
     pub timestamp: DateTime<Utc>,
-}
-
-impl<T> Value<T> {
-    fn new(value: T) -> Value<T> {
-        Value {
-            value,
-            timestamp: Utc::now(),
-        }
-    }
 }

@@ -8,7 +8,8 @@ const App: Component = () => {
   const [options, setOptions] = createSignal<ConnectionOptions>({
     endpoint: 'http://192.168.178.161:8080',
     session: {
-      aquire: true
+      aquire: true,
+      storage: localStorage
     },
   })
 

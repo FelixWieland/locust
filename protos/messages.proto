@@ -7,8 +7,9 @@ import "google/protobuf/any.proto";
 
 message None {}
 
-message ConnectionID {
+message Connection {
     string id = 1;
+    repeated string subscribedNodesIDs = 2;
 }
 
 message Heartbeat {
@@ -37,14 +38,14 @@ message StreamResponse {
     oneof data {
         None none = 1;
         Heartbeat heartbeat = 2;
-        ConnectionID connectionID = 3;
+        Connection connection = 3;
         Session session = 4;
         Node node = 5;
     }
 }
 
 message UnaryStreamRequest {
-    ConnectionID connectionID = 1;
+    string connectionID = 1;
     repeated StreamRequest requests = 2;
 }
 
@@ -58,6 +59,7 @@ message AquireSession {
 message Session {
     string sessionToken = 1;
     uint32 active_connections = 2;
+    repeated string subscribedNodesIDs = 3;
 }
 
 message Node {

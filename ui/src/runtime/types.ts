@@ -6,7 +6,7 @@ export type UUID = string
 
 export type NodeT = {
     id: UUID
-    value?: NodeValue
+    value: NodeValue
 }
 
 export enum ConnectionState {
@@ -54,67 +54,71 @@ export const allNodeDataMimeTypes = [
 export type NodeDataMimeTypes = typeof allNodeDataMimeTypes[number]
 
 export class NodeValue {
-    private _timestamp: number
-    private _value: Any
+    private _timestamp?: number
+    private _value?: Any
 
-    constructor(ts: Timestamp, value: Any) {
-        this._timestamp = Math.floor(new Date(Number(ts.seconds) * 1000 + (Math.floor(ts.nanos / 1000))).valueOf() / 1000)
+    constructor(ts: Timestamp, value?: Any) {
+        this._timestamp = ts ? Math.floor(new Date(Number(ts.seconds) * 1000 + (Math.floor(ts.nanos / 1000))).valueOf() / 1000) : undefined
         this._value = value
     }
 
+    default<T>(fn: (a: Any) => T, def: T): T {
+        return this._value ? fn(this._value) : def
+    }
+
     mime(): NodeDataMimeTypes {
-        return this._value.typeUrl as NodeDataMimeTypes
+        return (this._value ? this._value.typeUrl : '') as NodeDataMimeTypes
     }
 
     timestamp() {
-        return this._timestamp
+        return (this._timestamp ? this._timestamp : -1)
     }
 
     raw() {
-        return Parse.raw(this._value)
+        return this.default(Parse.raw, new Uint8Array())
     }
 
     text() {
-        return Parse.text(this._value)
+        return this.default(Parse.text, '')
     }
 
     number() {
-        return Parse.number(this._value)
+        return this.default(Parse.number, NaN)
     }
 
     boolean() {
-        return Parse.boolean(this._value)
+        return this.default(Parse.boolean, null)
     }
 
     json<T = any>() {
-        return Parse.json<T>(this._value)
+        return this.default(Parse.json, null) as T
     }
 
     textCsv() {
-        return Parse.textCsv(this._value)
+        return this.default(Parse.textCsv, '');
     }
 
     textJavascript() {
-        return Parse.textJavascript(this._value)
+        return this.default(Parse.textJavascript, '')
     }
 
     textHtml() {
-        return Parse.textHtml(this._value)
+        return this.default(Parse.textHtml, '')
     }
 
     applicationXml() {
-        return Parse.applicationXml(this._value)
+        return this.default(Parse.applicationXml, null)
     }
 
     imageJpeg() {
-        return Parse.imageJpeg(this._value)
+        return this.default(Parse.imageJpeg, new Uint8Array())
     }
 
     imagePng() {
-        return Parse.imagePng(this._value)
+        return this.default(Parse.imagePng, new Uint8Array())
     }
 
     imageSvgXml() {
-        return Parse.imageSvgXml(this._value)
+        return this.default(Parse.imageSvgXml, null)
     }
 }

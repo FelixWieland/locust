@@ -1,10 +1,9 @@
 import { apiClient } from "./api/api.client";
-import { ConnectionID, Heartbeat, Session, StreamRequest, StreamResponse, UnaryStreamRequest, CreateNode, Node, UpdateNodeValue, NodeValue, None } from "./api/messages";
+import { Heartbeat, Session, StreamRequest, StreamResponse, UnaryStreamRequest, CreateNode, Node, UpdateNodeValue, NodeValue, None } from "./api/messages";
 import { ConnectionOptions, NodeValue as NodeValueC, UUID } from "./types";
 import * as heartbeat from './heartbeat'
 import { readSessionToken, setLatency, setSession, updateNodes, writeSessionToken } from "./store";
 import { assure } from "./util";
-import { createSignal } from "solid-js";
 import { produce } from "solid-js/store";
 
 
@@ -57,8 +56,7 @@ class Connection {
     async send(requests: Array<StreamRequest>) {
         try {
             const sr = UnaryStreamRequest.create()
-            sr.connectionID = ConnectionID.create()
-            sr.connectionID.id = this._id
+            sr.connectionID = this._id
             sr.requests.push(...requests)
             const r = this._server.streamRequest(sr)
             await r.response
@@ -108,6 +106,8 @@ class Connection {
             this.onSession((response.data as unknown as any).session as Session)
         } else if (assure(response, "node")) {
             this.onNode((response.data as unknown as any).node as Node)
+        } else if (assure(response, "connection")) {
+
         }
     }
 
@@ -133,15 +133,14 @@ class Connection {
     private onNode(data: Node) {
         console.log(`Node: received node: ${data.id}`)
         updateNodes(produce(nodes => {
-            let valuec: NodeValueC | undefined = undefined
-            if (data.value !== undefined && data.value.oneofKind == "some" && (data.value as any).some !== undefined) {
-                const timestamp = (data.value as any).some.timestamp
-                const value = (data.value as any).some.data
-                valuec = new NodeValueC(timestamp, value)
-            }
-            nodes[data.id] = {
-                id: data.id,
-                value: valuec
+            if (nodes[data.id]) {
+                // we already have the node so we just update the value
+                nodes[data.id].value = new NodeValueC((data?.value as any)?.some?.timestamp, (data?.value as any)?.some?.data)
+            } else {
+                nodes[data.id] = {
+                    id: data.id,
+                    value: new NodeValueC((data?.value as any)?.some?.timestamp, (data?.value as any)?.some?.data)
+                }
             }
         }))
     }

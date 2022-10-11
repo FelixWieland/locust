@@ -49,35 +49,43 @@ impl Session {
     }
 
     pub fn active_connections(&self) -> usize {
-        self.subscribed_node_ids.len()
+        self.connections.len()
     }
 
-    pub async fn set_connection(self: Arc<Self>, conn: Arc<Connection>) {
+    pub fn subscribed_node_ids(&self) -> Vec<Uuid> {
+        self.subscribed_node_ids
+            .iter()
+            .map(|item| item.key().clone())
+            .collect()
+    }
+
+    pub async fn add_connection(self: Arc<Self>, conn: Arc<Connection>) {
         self.connections.insert(conn.id(), conn.clone());
-        // every time a new connections gets set we send a publish of the session
-        self.publish_self().await;
-        // additionally we resubscribe the connection to all previous subscribed node
+        // we resubscribe the connection to all previous subscribed node
         let mut promises = vec![];
         for node_id in self.subscribed_node_ids.iter() {
             promises.push(self.clone().subscribe_to_node(node_id.clone()))
         }
         join_all(promises).await;
+        // every time a new connections gets set we send a publish of the session
+        self.publish_self().await;
     }
 
     pub async fn remove_connection(&self, connection_id: &Uuid) {
         self.connections.remove(connection_id);
-        // every time a connection disconnects we publish the session
-        self.publish_self().await;
         // here we need to handle the unsubscribe of subscribed nodes
         let mut promises = vec![];
         for node_id in self.subscribed_node_ids.iter() {
             promises.push(async move {
                 self.global_state
                     .unsubscribe_from_node(connection_id, &node_id)
-                    .await
+                    .await;
+                self.subscribed_node_ids.remove(&node_id)
             });
         }
         join_all(promises).await;
+        // every time a connection disconnects we publish the session
+        self.publish_self().await;
     }
 
     pub async fn reset_lifetime(&self) {
@@ -100,6 +108,7 @@ impl Session {
 
     pub async fn subscribe_to_node(self: Arc<Self>, node_id: Uuid) {
         if let Some(receiver) = self
+            .clone()
             .global_state
             .subscribe_to_node(&self.id, &node_id)
             .await
@@ -108,10 +117,11 @@ impl Session {
             // like that clients that lost the connection dont have keep track wich values they subscribed
             // is this optimal ?
             self.subscribed_node_ids.insert(node_id);
+            let s1 = self.clone();
             tokio::spawn(async move {
                 let mut stream = ReceiverStream::new(receiver);
                 while let Some(data) = stream.next().await {
-                    let err = self
+                    let err = s1
                         .send_single_data(builders::Response::node_stream(&node_id, data))
                         .await;
                     if let Err(err) = err {
@@ -119,7 +129,25 @@ impl Session {
                     }
                 }
             });
+            // when we subscribe to a new node we publish that information to the clients over the session
+            self.publish_self().await;
         }
+    }
+
+    pub async fn unsubscribe_from_node(self: Arc<Self>, node_id: Uuid) {
+        let mut promises = vec![];
+        for connection in self.connections.iter() {
+            let s = self.clone();
+            promises.push(async move {
+                s.subscribed_node_ids.remove(&node_id);
+                s.global_state
+                    .unsubscribe_from_node(connection.key(), &node_id)
+                    .await;
+            });
+        }
+        join_all(promises).await;
+        // wehen we unsubscribe from a node we publish that information to the clients over the session
+        self.publish_self().await
     }
 
     pub async fn send(

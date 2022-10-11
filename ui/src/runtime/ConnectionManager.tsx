@@ -1,7 +1,7 @@
 import { createEffect, createSignal, onCleanup } from "solid-js"
 import { createStore } from "solid-js/store"
 import { apiClient } from "./api/api.client"
-import { StreamRequests, ConnectionID, StreamRequest, AquireSession, None } from './api/messages';
+import { StreamRequests, Connection as ConnectionT, StreamRequest, AquireSession, None } from './api/messages';
 import { Sidebar } from "./Sidebar"
 import { Connection } from './connection'
 
@@ -101,9 +101,9 @@ function ConnectionManager(props: ConnectionProps) {
         // stream.responses.onNext(console.log)
         stream.responses.onMessage((message) => {
             message.responses.forEach(response => {
-                if (response.data.oneofKind === "connectionID") {
+                if (response.data.oneofKind === "connection") {
                     // WHY THE FUCK DO I NEED TO DO THIS TYPESCRITP????!=!"§="I§ HOLY
-                    const data = (response.data as unknown as any).connectionID as ConnectionID
+                    const data = (response.data as unknown as any).connection as ConnectionT
                     c = new Connection(data.id, apiServer, props.options)
                     setConnection(c)
                     setConnectionState(ConnectionState.CONNECTED)

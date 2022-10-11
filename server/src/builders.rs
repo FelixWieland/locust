@@ -6,6 +6,7 @@ use uuid::Uuid;
 
 use crate::api;
 use crate::api::stream_response as res;
+use crate::connection::Connection;
 // use crate::api::stream_request as req;
 use crate::runtime::node;
 use crate::session::Session;
@@ -21,9 +22,10 @@ impl Response {
         api::StreamResponse { data: Some(data) }
     }
 
-    pub fn connection_id_stream(connection_id: &Uuid) -> api::StreamResponse {
-        Response::stream_response(res::Data::ConnectionId(api::ConnectionId {
-            id: connection_id.to_string(),
+    pub fn connection_stream(conn: &Connection) -> api::StreamResponse {
+        Response::stream_response(res::Data::Connection(api::Connection {
+            id: conn.id().to_string(),
+            subscribed_nodes_i_ds: conn.subscribed_node_ids().iter().map(|node_id| node_id.to_string()).collect()
         }))
     }
 
@@ -50,6 +52,7 @@ impl Response {
         Response::stream_response(res::Data::Session(api::Session {
             session_token: session.id().to_string(),
             active_connections: session.active_connections() as u32,
+            subscribed_nodes_i_ds: session.subscribed_node_ids().iter().map(|node_id| node_id.to_string()).collect()
         }))
     }
 
