@@ -1,11 +1,11 @@
 import { apiClient } from "./api/api.client";
 import { Heartbeat, Session, StreamRequest, StreamResponse, UnaryStreamRequest, CreateNode, Node, UpdateNodeValue, NodeValue, None } from "./api/messages";
-import { ConnectionOptions, NodeValue as NodeValueC, UUID } from "./types";
-import * as heartbeat from './heartbeat'
+import { ConnectionOptions, UUID } from "./types";
+import { NodeValue as NodeValueC } from "./node_value";
+import * as heartbeat from './time'
 import { readSessionToken, setLatency, setSession, updateNodes, writeSessionToken } from "./store";
 import { assure } from "./util";
 import { produce } from "solid-js/store";
-
 
 class Connection {
     private _server: apiClient;
@@ -25,7 +25,6 @@ class Connection {
         this._server = apiServer
         this._options = options
 
-        // start heart beat
         this.beatOnce()
     }
 
@@ -95,6 +94,31 @@ class Connection {
         await this.sendSingleData(sr)
     }
 
+    async subscribeToNode(node_id: string) {
+        const sr = StreamRequest.create()
+        sr.data = {
+            oneofKind: "subscribeToNode",
+            subscribeToNode: {
+                id: node_id
+            }
+        }
+        await this.sendSingleData(sr)
+    }
+
+    async unsubscribeFromNode(nodeID: string, drop: boolean = true) {
+        const sr = StreamRequest.create()
+        sr.data = {
+            oneofKind: "unsubscribeFromNode",
+            unsubscribeFromNode: {
+                id: nodeID
+            }
+        }
+        await this.sendSingleData(sr)
+        if (drop) {
+            this.dropNodeState(nodeID)
+        }
+    }
+
     async sendSingleData(sr: StreamRequest) {
         await this.send([sr])
     }
@@ -109,6 +133,12 @@ class Connection {
         } else if (assure(response, "connection")) {
 
         }
+    }
+    
+    private dropNodeState(nodeID: string) {
+        updateNodes(produce(nodes => {
+            delete nodes[nodeID]
+        }))
     }
 
     private onHeartbeat(data: Heartbeat) {
@@ -136,12 +166,10 @@ class Connection {
             const ts = (data?.value as any)?.some?.timestamp
             const _timestamp = ts ? Math.floor(new Date(Number(ts.seconds) * 1000 + (Math.floor(ts.nanos / 1000))).valueOf() / 1000) : undefined
             const _value = (data?.value as any)?.some?.data
-
             if (nodes[data.id]) {
-                // we already have the node so we just update the value
                 nodes[data.id].value().set({
-                    _timestamp: _timestamp,
-                    _value: _value
+                    _timestamp,
+                    _value
                 })
             } else {
                 nodes[data.id] = {

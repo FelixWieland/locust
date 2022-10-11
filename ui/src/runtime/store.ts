@@ -15,4 +15,3 @@ export const allNodes = createMemo(() => Object.keys(nodes).map(key => nodes[key
 
 export const readSessionToken = (storage: Storage) => storage.getItem("_locust_session_token")
 export const writeSessionToken = (token: string, storage: Storage) => storage.setItem("_locust_session_token", token)
-

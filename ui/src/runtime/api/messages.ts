@@ -96,6 +96,18 @@ export interface StreamRequest {
          */
         updateNodeValue: UpdateNodeValue;
     } | {
+        oneofKind: "subscribeToNode";
+        /**
+         * @generated from protobuf field: api.SubscribeToNode subscribeToNode = 6;
+         */
+        subscribeToNode: SubscribeToNode;
+    } | {
+        oneofKind: "unsubscribeFromNode";
+        /**
+         * @generated from protobuf field: api.UnsubscribeFromNode unsubscribeFromNode = 7;
+         */
+        unsubscribeFromNode: UnsubscribeFromNode;
+    } | {
         oneofKind: undefined;
     };
 }
@@ -268,6 +280,24 @@ export interface UpdateNodeValue {
      * @generated from protobuf field: google.protobuf.Any data = 2;
      */
     data?: Any;
+}
+/**
+ * @generated from protobuf message api.SubscribeToNode
+ */
+export interface SubscribeToNode {
+    /**
+     * @generated from protobuf field: string id = 1;
+     */
+    id: string;
+}
+/**
+ * @generated from protobuf message api.UnsubscribeFromNode
+ */
+export interface UnsubscribeFromNode {
+    /**
+     * @generated from protobuf field: string id = 1;
+     */
+    id: string;
 }
 // @generated message type with reflection information, may provide speed optimized methods
 class None$Type extends MessageType<None> {
@@ -498,7 +528,9 @@ class StreamRequest$Type extends MessageType<StreamRequest> {
             { no: 2, name: "heartbeat", kind: "message", oneof: "data", T: () => Heartbeat },
             { no: 3, name: "acquireSession", kind: "message", oneof: "data", T: () => AcquireSession },
             { no: 4, name: "createNode", kind: "message", oneof: "data", T: () => CreateNode },
-            { no: 5, name: "updateNodeValue", kind: "message", oneof: "data", T: () => UpdateNodeValue }
+            { no: 5, name: "updateNodeValue", kind: "message", oneof: "data", T: () => UpdateNodeValue },
+            { no: 6, name: "subscribeToNode", kind: "message", oneof: "data", T: () => SubscribeToNode },
+            { no: 7, name: "unsubscribeFromNode", kind: "message", oneof: "data", T: () => UnsubscribeFromNode }
         ]);
     }
     create(value?: PartialMessage<StreamRequest>): StreamRequest {
@@ -543,6 +575,18 @@ class StreamRequest$Type extends MessageType<StreamRequest> {
                         updateNodeValue: UpdateNodeValue.internalBinaryRead(reader, reader.uint32(), options, (message.data as any).updateNodeValue)
                     };
                     break;
+                case /* api.SubscribeToNode subscribeToNode */ 6:
+                    message.data = {
+                        oneofKind: "subscribeToNode",
+                        subscribeToNode: SubscribeToNode.internalBinaryRead(reader, reader.uint32(), options, (message.data as any).subscribeToNode)
+                    };
+                    break;
+                case /* api.UnsubscribeFromNode unsubscribeFromNode */ 7:
+                    message.data = {
+                        oneofKind: "unsubscribeFromNode",
+                        unsubscribeFromNode: UnsubscribeFromNode.internalBinaryRead(reader, reader.uint32(), options, (message.data as any).unsubscribeFromNode)
+                    };
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -570,6 +614,12 @@ class StreamRequest$Type extends MessageType<StreamRequest> {
         /* api.UpdateNodeValue updateNodeValue = 5; */
         if (message.data.oneofKind === "updateNodeValue")
             UpdateNodeValue.internalBinaryWrite(message.data.updateNodeValue, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        /* api.SubscribeToNode subscribeToNode = 6; */
+        if (message.data.oneofKind === "subscribeToNode")
+            SubscribeToNode.internalBinaryWrite(message.data.subscribeToNode, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
+        /* api.UnsubscribeFromNode unsubscribeFromNode = 7; */
+        if (message.data.oneofKind === "unsubscribeFromNode")
+            UnsubscribeFromNode.internalBinaryWrite(message.data.unsubscribeFromNode, writer.tag(7, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -1080,3 +1130,97 @@ class UpdateNodeValue$Type extends MessageType<UpdateNodeValue> {
  * @generated MessageType for protobuf message api.UpdateNodeValue
  */
 export const UpdateNodeValue = new UpdateNodeValue$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class SubscribeToNode$Type extends MessageType<SubscribeToNode> {
+    constructor() {
+        super("api.SubscribeToNode", [
+            { no: 1, name: "id", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<SubscribeToNode>): SubscribeToNode {
+        const message = { id: "" };
+        globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
+        if (value !== undefined)
+            reflectionMergePartial<SubscribeToNode>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: SubscribeToNode): SubscribeToNode {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string id */ 1:
+                    message.id = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: SubscribeToNode, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string id = 1; */
+        if (message.id !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.id);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message api.SubscribeToNode
+ */
+export const SubscribeToNode = new SubscribeToNode$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class UnsubscribeFromNode$Type extends MessageType<UnsubscribeFromNode> {
+    constructor() {
+        super("api.UnsubscribeFromNode", [
+            { no: 1, name: "id", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<UnsubscribeFromNode>): UnsubscribeFromNode {
+        const message = { id: "" };
+        globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
+        if (value !== undefined)
+            reflectionMergePartial<UnsubscribeFromNode>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: UnsubscribeFromNode): UnsubscribeFromNode {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string id */ 1:
+                    message.id = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: UnsubscribeFromNode, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string id = 1; */
+        if (message.id !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.id);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message api.UnsubscribeFromNode
+ */
+export const UnsubscribeFromNode = new UnsubscribeFromNode$Type();

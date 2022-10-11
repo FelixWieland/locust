@@ -1,5 +1,5 @@
 export * from './ConnectionManager'
-export * from './Node'
+export * from './node'
 export {
     session,
     connection,

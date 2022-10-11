@@ -128,6 +128,16 @@ export class StreamRequest extends jspb.Message {
   hasUpdatenodevalue(): boolean;
   clearUpdatenodevalue(): StreamRequest;
 
+  getSubscribetonode(): SubscribeToNode | undefined;
+  setSubscribetonode(value?: SubscribeToNode): StreamRequest;
+  hasSubscribetonode(): boolean;
+  clearSubscribetonode(): StreamRequest;
+
+  getUnsubscribefromnode(): UnsubscribeFromNode | undefined;
+  setUnsubscribefromnode(value?: UnsubscribeFromNode): StreamRequest;
+  hasUnsubscribefromnode(): boolean;
+  clearUnsubscribefromnode(): StreamRequest;
+
   getDataCase(): StreamRequest.DataCase;
 
   serializeBinary(): Uint8Array;
@@ -145,6 +155,8 @@ export namespace StreamRequest {
     acquiresession?: AcquireSession.AsObject,
     createnode?: CreateNode.AsObject,
     updatenodevalue?: UpdateNodeValue.AsObject,
+    subscribetonode?: SubscribeToNode.AsObject,
+    unsubscribefromnode?: UnsubscribeFromNode.AsObject,
   }
 
   export enum DataCase { 
@@ -154,6 +166,8 @@ export namespace StreamRequest {
     ACQUIRESESSION = 3,
     CREATENODE = 4,
     UPDATENODEVALUE = 5,
+    SUBSCRIBETONODE = 6,
+    UNSUBSCRIBEFROMNODE = 7,
   }
 }
 
@@ -415,6 +429,42 @@ export namespace UpdateNodeValue {
   export type AsObject = {
     id: string,
     data?: google_protobuf_any_pb.Any.AsObject,
+  }
+}
+
+export class SubscribeToNode extends jspb.Message {
+  getId(): string;
+  setId(value: string): SubscribeToNode;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): SubscribeToNode.AsObject;
+  static toObject(includeInstance: boolean, msg: SubscribeToNode): SubscribeToNode.AsObject;
+  static serializeBinaryToWriter(message: SubscribeToNode, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): SubscribeToNode;
+  static deserializeBinaryFromReader(message: SubscribeToNode, reader: jspb.BinaryReader): SubscribeToNode;
+}
+
+export namespace SubscribeToNode {
+  export type AsObject = {
+    id: string,
+  }
+}
+
+export class UnsubscribeFromNode extends jspb.Message {
+  getId(): string;
+  setId(value: string): UnsubscribeFromNode;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): UnsubscribeFromNode.AsObject;
+  static toObject(includeInstance: boolean, msg: UnsubscribeFromNode): UnsubscribeFromNode.AsObject;
+  static serializeBinaryToWriter(message: UnsubscribeFromNode, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): UnsubscribeFromNode;
+  static deserializeBinaryFromReader(message: UnsubscribeFromNode, reader: jspb.BinaryReader): UnsubscribeFromNode;
+}
+
+export namespace UnsubscribeFromNode {
+  export type AsObject = {
+    id: string,
   }
 }
 

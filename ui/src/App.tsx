@@ -9,7 +9,23 @@ const App: Component = () => {
     endpoint: 'http://192.168.178.161:8080',
     session: {
       aquire: true,
-      storage: {
+      storage: localStorage
+    },
+  })
+
+  return (<>
+    <Test />
+    <Connection
+      options={options()}
+    />
+  </>);
+};
+
+export default App;
+
+
+/*
+storage: {
         getItem: (key: string) => {
           const params = new URLSearchParams(window.location.search);
           if (params.has('s')) {
@@ -24,15 +40,4 @@ const App: Component = () => {
           }
         }
       }
-    },
-  })
-
-  return (<>
-    <Test />
-    <Connection
-      options={options()}
-    />
-  </>);
-};
-
-export default App;
+*/

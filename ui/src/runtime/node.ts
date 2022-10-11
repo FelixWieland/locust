@@ -1,6 +1,6 @@
-import { Accessor, createMemo, createSignal, JSX } from 'solid-js'
+import { Accessor, createEffect, createMemo, createSignal, JSX } from 'solid-js'
 import { NodeDataMimeTypes, NodeT, UUID } from './types'
-import { connection, nodes, updateNodes } from './store'
+import { connection, nodes, session, updateNodes } from './store'
 import { produce } from 'solid-js/store'
 import { UpdateNodeValue } from './api/messages'
 import { Any } from './api/google/protobuf/any'
@@ -29,10 +29,16 @@ type NodeData = {
         imageJpeg: (data: any) => void;
         imagePng: (data: any) => void;
         imageSvgXml: (data: SVGElement) => void;
-    }
+    },
+    unsubscribe: () => void,
+    subscribed: Accessor<boolean>
 }
 
 function node(id: UUID): NodeData | null {
+
+    const nodeData = createMemo(() => {
+        return nodes[id] || null
+    })
 
     const unv = (data: Any) => {
         const up = UpdateNodeValue.create()
@@ -56,23 +62,29 @@ function node(id: UUID): NodeData | null {
         imageSvgXml: (data: SVGElement) => unv(Serialize.imageSvgXml(data))
     }
 
-    const nodeData = createMemo(() => {
-        return nodes[id] || null
-    })
+    // the drop option needs to be used with care because it doesnt sync
+    const unsubscribe = (drop=false) => connection()?.unsubscribeFromNode(id, drop)
+    const subscribed = createMemo(() => session()?.subscribedNodesIDs.includes(id))
 
-    if (nodeData() == null) {
-        return null
-    } else {
-        return {
-            node: nodeData,
-            updateValue: updateValue
-        }
+    return nodeData() == null ? null : {
+        node: nodeData,
+        updateValue: updateValue,
+        unsubscribe: unsubscribe,
+        subscribed: subscribed
     }
 }
 
 function Node(props: NodeProps) {
     const id = props.id
     const n = node(id)
+
+    createEffect(() => {
+        // when the subscribe flag is true we cant unsubscribe manually ... how to fix
+        // if (!subscribed() && subscribe) {
+        //     connection()?.subscribeToNode(id)
+        // }
+    })
+
     return n !== null ? props.children(n) : null
 }
 
