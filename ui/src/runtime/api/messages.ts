@@ -78,11 +78,11 @@ export interface StreamRequest {
          */
         heartbeat: Heartbeat;
     } | {
-        oneofKind: "aquireSession";
+        oneofKind: "acquireSession";
         /**
-         * @generated from protobuf field: api.AquireSession aquireSession = 3;
+         * @generated from protobuf field: api.AcquireSession acquireSession = 3;
          */
-        aquireSession: AquireSession;
+        acquireSession: AcquireSession;
     } | {
         oneofKind: "createNode";
         /**
@@ -154,9 +154,9 @@ export interface UnaryStreamRequest {
     requests: StreamRequest[];
 }
 /**
- * @generated from protobuf message api.AquireSession
+ * @generated from protobuf message api.AcquireSession
  */
-export interface AquireSession {
+export interface AcquireSession {
     /**
      * @generated from protobuf oneof: data
      */
@@ -496,7 +496,7 @@ class StreamRequest$Type extends MessageType<StreamRequest> {
         super("api.StreamRequest", [
             { no: 1, name: "none", kind: "message", oneof: "data", T: () => None },
             { no: 2, name: "heartbeat", kind: "message", oneof: "data", T: () => Heartbeat },
-            { no: 3, name: "aquireSession", kind: "message", oneof: "data", T: () => AquireSession },
+            { no: 3, name: "acquireSession", kind: "message", oneof: "data", T: () => AcquireSession },
             { no: 4, name: "createNode", kind: "message", oneof: "data", T: () => CreateNode },
             { no: 5, name: "updateNodeValue", kind: "message", oneof: "data", T: () => UpdateNodeValue }
         ]);
@@ -525,10 +525,10 @@ class StreamRequest$Type extends MessageType<StreamRequest> {
                         heartbeat: Heartbeat.internalBinaryRead(reader, reader.uint32(), options, (message.data as any).heartbeat)
                     };
                     break;
-                case /* api.AquireSession aquireSession */ 3:
+                case /* api.AcquireSession acquireSession */ 3:
                     message.data = {
-                        oneofKind: "aquireSession",
-                        aquireSession: AquireSession.internalBinaryRead(reader, reader.uint32(), options, (message.data as any).aquireSession)
+                        oneofKind: "acquireSession",
+                        acquireSession: AcquireSession.internalBinaryRead(reader, reader.uint32(), options, (message.data as any).acquireSession)
                     };
                     break;
                 case /* api.CreateNode createNode */ 4:
@@ -561,9 +561,9 @@ class StreamRequest$Type extends MessageType<StreamRequest> {
         /* api.Heartbeat heartbeat = 2; */
         if (message.data.oneofKind === "heartbeat")
             Heartbeat.internalBinaryWrite(message.data.heartbeat, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
-        /* api.AquireSession aquireSession = 3; */
-        if (message.data.oneofKind === "aquireSession")
-            AquireSession.internalBinaryWrite(message.data.aquireSession, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* api.AcquireSession acquireSession = 3; */
+        if (message.data.oneofKind === "acquireSession")
+            AcquireSession.internalBinaryWrite(message.data.acquireSession, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
         /* api.CreateNode createNode = 4; */
         if (message.data.oneofKind === "createNode")
             CreateNode.internalBinaryWrite(message.data.createNode, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
@@ -725,21 +725,21 @@ class UnaryStreamRequest$Type extends MessageType<UnaryStreamRequest> {
  */
 export const UnaryStreamRequest = new UnaryStreamRequest$Type();
 // @generated message type with reflection information, may provide speed optimized methods
-class AquireSession$Type extends MessageType<AquireSession> {
+class AcquireSession$Type extends MessageType<AcquireSession> {
     constructor() {
-        super("api.AquireSession", [
+        super("api.AcquireSession", [
             { no: 1, name: "none", kind: "message", oneof: "data", T: () => None },
             { no: 2, name: "sessionToken", kind: "scalar", oneof: "data", T: 9 /*ScalarType.STRING*/ }
         ]);
     }
-    create(value?: PartialMessage<AquireSession>): AquireSession {
+    create(value?: PartialMessage<AcquireSession>): AcquireSession {
         const message = { data: { oneofKind: undefined } };
         globalThis.Object.defineProperty(message, MESSAGE_TYPE, { enumerable: false, value: this });
         if (value !== undefined)
-            reflectionMergePartial<AquireSession>(this, message, value);
+            reflectionMergePartial<AcquireSession>(this, message, value);
         return message;
     }
-    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: AquireSession): AquireSession {
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: AcquireSession): AcquireSession {
         let message = target ?? this.create(), end = reader.pos + length;
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
@@ -767,7 +767,7 @@ class AquireSession$Type extends MessageType<AquireSession> {
         }
         return message;
     }
-    internalBinaryWrite(message: AquireSession, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+    internalBinaryWrite(message: AcquireSession, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
         /* api.None none = 1; */
         if (message.data.oneofKind === "none")
             None.internalBinaryWrite(message.data.none, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
@@ -781,9 +781,9 @@ class AquireSession$Type extends MessageType<AquireSession> {
     }
 }
 /**
- * @generated MessageType for protobuf message api.AquireSession
+ * @generated MessageType for protobuf message api.AcquireSession
  */
-export const AquireSession = new AquireSession$Type();
+export const AcquireSession = new AcquireSession$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class Session$Type extends MessageType<Session> {
     constructor() {

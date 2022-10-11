@@ -1,6 +1,6 @@
-import { createEffect, onCleanup } from "solid-js"
+import { createEffect, onCleanup, Show } from "solid-js"
 import { Portal } from "solid-js/web"
-import { connection, latency } from "./store"
+import { connection, latency, session } from "./store"
 import { ConnectionOptions } from "./types"
 
 type ConnectionOptionPopupProps = {
@@ -41,7 +41,7 @@ function ConnectionOptionPopup(props: ConnectionOptionPopupProps) {
                     <div class="relative bg-white rounded shadow dark:bg-gray-700">
                         <div class="flex justify-between items-start p-4 rounded-t border-b dark:border-gray-600">
                             <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
-                                Connection options
+                                Connection
                                 <span class="bg-teal-700 text-white ml-3 text-sm font-medium mr-2 px-2.5 py-0.5 translate-y-2 rounded ">
                                     {latency() || '-'}ms
                                 </span>
@@ -86,6 +86,36 @@ function ConnectionOptionPopup(props: ConnectionOptionPopupProps) {
                                     <span class="ml-3 text-sm font-medium text-gray-900 dark:text-gray-300">Session</span>
                                 </label>
                             </div>
+                            <Show when={!!session()}>
+                                <div class="mb-1 mt-1 border-zinc-200 border-solid border-t"></div>
+                                <div>
+                                    <div>
+                                        <label for="session-token" class="block mb-2 text-sm font-medium text-gray-900 dark:text-gray-300">Session-Token</label>
+                                        <input
+                                            type="text"
+                                            id="session-token"
+                                            class="block p-2 w-full text-gray-900 bg-gray-50 rounded-lg border border-gray-300 sm:text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                                            disabled={true}
+                                            value={session().sessionToken}
+                                        />
+                                    </div>
+                                    <div class="mt-3">
+                                        <label for="endpoint" class="block mb-1 text-sm font-medium text-gray-900 dark:text-gray-300">Active connections</label>
+                                        <span class="bg-teal-700 text-white text-sm font-medium mr-2 px-2.5 py-0.5 translate-y-2 rounded ">
+                                            {session()?.activeConnections || 0}
+                                        </span>
+                                    </div>
+                                    <div class="mt-3">
+                                        <label for="endpoint" class="block mb-1 text-sm font-medium text-gray-900 dark:text-gray-300">Subscribed nodes</label>
+                                        <span class="bg-teal-700 text-white text-sm font-medium mr-2 px-2.5 py-0.5 translate-y-2 rounded ">
+                                            {session()?.subscribedNodesIDs?.length || 0}
+                                        </span>
+                                    </div>
+                                </div>
+                            </Show>
+                            <p class="p-0 text-xs text-teal-700 w-full text-right" style={{ 'margin-bottom': '-10px' }}>
+                                Powered by locust
+                            </p>
                         </div>
                     </div>
                 </div>

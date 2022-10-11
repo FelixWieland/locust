@@ -1,7 +1,7 @@
 import { createEffect, createSignal, onCleanup } from "solid-js"
 import { createStore } from "solid-js/store"
 import { apiClient } from "./api/api.client"
-import { StreamRequests, Connection as ConnectionT, StreamRequest, AquireSession, None } from './api/messages';
+import { StreamRequests, Connection as ConnectionT, StreamRequest, AcquireSession, None } from './api/messages';
 import { Sidebar } from "./Sidebar"
 import { Connection } from './connection'
 
@@ -34,21 +34,21 @@ function ConnectionManager(props: ConnectionProps) {
         }
     }
 
-    function aquireSession(): AquireSession {
-        const aquireSession = AquireSession.create()
+    function acquireSession(): AcquireSession {
+        const acquireSession = AcquireSession.create()
         const sessionToken = props.options.session?.token || readSessionToken(props.options.session?.storage || sessionStorage)
         if (!sessionToken) {
-            aquireSession.data = {
+            acquireSession.data = {
                 oneofKind: 'none',
                 none: None
             }
         } else {
-            aquireSession.data = {
+            acquireSession.data = {
                 oneofKind: 'sessionToken',
                 sessionToken: sessionToken
             }
         }
-        return aquireSession
+        return acquireSession
     }
 
     function getInitialRequests(): Array<StreamRequest> {
@@ -56,10 +56,10 @@ function ConnectionManager(props: ConnectionProps) {
 
         if (props.options.session?.aquire) {
             const sr = StreamRequest.create()
-            const ar = aquireSession()
+            const ar = acquireSession()
             sr.data = {
-                oneofKind: 'aquireSession',
-                aquireSession: ar
+                oneofKind: 'acquireSession',
+                acquireSession: ar
             }
             initialRequests.push(sr)
         }
@@ -138,7 +138,7 @@ function ConnectionManager(props: ConnectionProps) {
     })
 
     return (<>
-        <span class="h-6 w-6 rounded-full shadow fixed top-3 left-3 group hover:cursor-pointer z-40" onClick={() => setOpen(o => !o)}>
+        <span class="h-5 w-5 rounded-full shadow fixed top-3.5 left-3.5 group hover:cursor-pointer z-40" onClick={() => setOpen(o => !o)}>
             <span
                 class="absolute inline-flex h-full w-full rounded-full opacity-75"
                 classList={{
@@ -149,7 +149,7 @@ function ConnectionManager(props: ConnectionProps) {
                 }}
             />
             <span
-                class="relative inline-flex rounded-full h-6 w-6 mb-0.5 opacity-90"
+                class="relative inline-flex rounded-full h-5 w-5 mb-0.5 opacity-90"
                 classList={{
                     'bg-yellow-500': connectionState() === ConnectionState.CONNECTING,
                     'bg-teal-700': connectionState() === ConnectionState.CONNECTED,

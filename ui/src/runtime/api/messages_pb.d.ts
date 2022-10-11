@@ -113,10 +113,10 @@ export class StreamRequest extends jspb.Message {
   hasHeartbeat(): boolean;
   clearHeartbeat(): StreamRequest;
 
-  getAquiresession(): AquireSession | undefined;
-  setAquiresession(value?: AquireSession): StreamRequest;
-  hasAquiresession(): boolean;
-  clearAquiresession(): StreamRequest;
+  getAcquiresession(): AcquireSession | undefined;
+  setAcquiresession(value?: AcquireSession): StreamRequest;
+  hasAcquiresession(): boolean;
+  clearAcquiresession(): StreamRequest;
 
   getCreatenode(): CreateNode | undefined;
   setCreatenode(value?: CreateNode): StreamRequest;
@@ -142,7 +142,7 @@ export namespace StreamRequest {
   export type AsObject = {
     none?: None.AsObject,
     heartbeat?: Heartbeat.AsObject,
-    aquiresession?: AquireSession.AsObject,
+    acquiresession?: AcquireSession.AsObject,
     createnode?: CreateNode.AsObject,
     updatenodevalue?: UpdateNodeValue.AsObject,
   }
@@ -151,7 +151,7 @@ export namespace StreamRequest {
     DATA_NOT_SET = 0,
     NONE = 1,
     HEARTBEAT = 2,
-    AQUIRESESSION = 3,
+    ACQUIRESESSION = 3,
     CREATENODE = 4,
     UPDATENODEVALUE = 5,
   }
@@ -236,26 +236,26 @@ export namespace UnaryStreamRequest {
   }
 }
 
-export class AquireSession extends jspb.Message {
+export class AcquireSession extends jspb.Message {
   getNone(): None | undefined;
-  setNone(value?: None): AquireSession;
+  setNone(value?: None): AcquireSession;
   hasNone(): boolean;
-  clearNone(): AquireSession;
+  clearNone(): AcquireSession;
 
   getSessiontoken(): string;
-  setSessiontoken(value: string): AquireSession;
+  setSessiontoken(value: string): AcquireSession;
 
-  getDataCase(): AquireSession.DataCase;
+  getDataCase(): AcquireSession.DataCase;
 
   serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): AquireSession.AsObject;
-  static toObject(includeInstance: boolean, msg: AquireSession): AquireSession.AsObject;
-  static serializeBinaryToWriter(message: AquireSession, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): AquireSession;
-  static deserializeBinaryFromReader(message: AquireSession, reader: jspb.BinaryReader): AquireSession;
+  toObject(includeInstance?: boolean): AcquireSession.AsObject;
+  static toObject(includeInstance: boolean, msg: AcquireSession): AcquireSession.AsObject;
+  static serializeBinaryToWriter(message: AcquireSession, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AcquireSession;
+  static deserializeBinaryFromReader(message: AcquireSession, reader: jspb.BinaryReader): AcquireSession;
 }
 
-export namespace AquireSession {
+export namespace AcquireSession {
   export type AsObject = {
     none?: None.AsObject,
     sessiontoken: string,

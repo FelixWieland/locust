@@ -14,7 +14,7 @@ function Sidebar(props: SidebarProps) {
     const [optionsPopupOpen, setOptionsPopupOpen] = createSignal(false)
 
     const setBodyPadding = () => {
-        document.body.style.paddingLeft = '3.5rem';
+        document.body.style.paddingLeft = '3rem';
     }
 
     const removeBodyPadding = () => {

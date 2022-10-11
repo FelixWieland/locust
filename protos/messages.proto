@@ -28,7 +28,7 @@ message StreamRequest {
     oneof data {
         None none = 1;
         Heartbeat heartbeat = 2;
-        AquireSession aquireSession = 3;
+        AcquireSession acquireSession = 3;
         CreateNode createNode = 4;
         UpdateNodeValue updateNodeValue = 5;
     }
@@ -49,7 +49,7 @@ message UnaryStreamRequest {
     repeated StreamRequest requests = 2;
 }
 
-message AquireSession {
+message AcquireSession {
     oneof data {
         None none = 1; // in this case we create a new session
         string sessionToken = 2; // in this case we try to aquire a previous session

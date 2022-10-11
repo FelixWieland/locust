@@ -12,7 +12,7 @@ use uuid::Uuid;
 
 use crate::{
     api,
-    api::{AquireSession, CreateNode, Heartbeat, StreamRequests, StreamResponses, UpdateNodeValue},
+    api::{CreateNode, Heartbeat, StreamRequests, StreamResponses, UpdateNodeValue, AcquireSession},
     builders, heartbeat,
     runtime::{self, node::Value},
     session::Session,
@@ -160,7 +160,7 @@ impl Connection {
         *m = session;
     }
 
-    async fn aquire_new_session(self: Arc<Self>) {
+    async fn acquire_new_session(self: Arc<Self>) {
         let session = Session::new(self.global_state.clone());
         let session = self.global_state.clone().add_session(session);
         session.clone().add_connection(self.clone()).await;
@@ -168,7 +168,7 @@ impl Connection {
         println!("Connection: aquired new session");
     }
 
-    async fn aquire_existing_session(self: Arc<Self>, session_token: String) {
+    async fn acquire_existing_session(self: Arc<Self>, session_token: String) {
         let session_id = Uuid::from_str(&session_token);
         match session_id {
             Ok(session_id) => {
@@ -179,21 +179,21 @@ impl Connection {
                         self.set_session(Some(session)).await;
                         println!("Connection: aquired existing session");
                     }
-                    None => self.aquire_new_session().await,
+                    None => self.acquire_new_session().await,
                 }
             }
             Err(_) => {
                 // error in parsing uuid -> create new session
-                self.aquire_new_session().await
+                self.acquire_new_session().await
             }
         }
     }
 
-    pub async fn aquire_session(self: Arc<Self>, aquire_session: AquireSession) {
+    pub async fn aquire_session(self: Arc<Self>, aquire_session: AcquireSession) {
         match aquire_session.data.unwrap() {
-            api::aquire_session::Data::None(_) => self.aquire_new_session().await,
-            api::aquire_session::Data::SessionToken(session_token) => {
-                self.aquire_existing_session(session_token).await
+            api::acquire_session::Data::None(_) => self.acquire_new_session().await,
+            api::acquire_session::Data::SessionToken(session_token) => {
+                self.acquire_existing_session(session_token).await
             }
         }
     }

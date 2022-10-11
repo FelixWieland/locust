@@ -3,9 +3,8 @@ use futures::{self, FutureExt};
 use std::sync::Arc;
 use tonic::Status;
 
-use crate::api::{AquireSession, CreateNode, UpdateNodeValue};
-use crate::events::api::Heartbeat;
-use crate::{api, api::StreamRequests, connection::Connection};
+use crate::api::{CreateNode, UpdateNodeValue, AcquireSession};
+use crate::{api, api::StreamRequests, connection::Connection, api::Heartbeat};
 
 pub struct DataHandler {}
 pub struct ErrorHandler {}
@@ -19,7 +18,7 @@ impl DataHandler {
                     api::stream_request::Data::Heartbeat(v) => {
                         DataHandler::on_heartbeat(conn.clone(), v).boxed_local()
                     }
-                    api::stream_request::Data::AquireSession(a) => {
+                    api::stream_request::Data::AcquireSession(a) => {
                         DataHandler::on_aquire_session(conn.clone(), a).boxed_local()
                     }
                     api::stream_request::Data::CreateNode(n) => {
@@ -40,7 +39,7 @@ impl DataHandler {
         conn.beat_once(data).await
     }
 
-    async fn on_aquire_session(conn: Arc<Connection>, data: AquireSession) {
+    async fn on_aquire_session(conn: Arc<Connection>, data: AcquireSession) {
         conn.aquire_session(data).await
     }
 
