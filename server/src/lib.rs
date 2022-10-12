@@ -7,6 +7,7 @@ pub mod server;
 pub mod session;
 pub mod state;
 pub mod util;
+pub mod specs;
 pub mod api {
     tonic::include_proto!("api");
 }

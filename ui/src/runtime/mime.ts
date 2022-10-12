@@ -56,9 +56,9 @@ class Serialize {
         }
     }
 
-    static json(data: object): Any {
+    static json(data: object, type: string | null = null): Any {
         return {
-            typeUrl: "json",
+            typeUrl: type == null ? "json" : "json/" + type,
             value: new TextEncoder().encode(JSON.stringify(data))
         }
     }

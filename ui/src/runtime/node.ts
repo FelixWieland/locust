@@ -10,12 +10,18 @@ type NodeIdentification = {
     id: UUID
 }
 
-type NodeProps = {
+type UnsafeNodeProps = {
     children: (data: NodeData) => JSX.Element
+    safe?: true
+} & NodeIdentification
+
+type SafeNodeProps = {
+    children: (data: SafeNodeData) => JSX.Element
+    safe: true
 } & NodeIdentification
 
 type NodeData = {
-    node: Accessor<NodeT>
+    node: Accessor<NodeT | null>
     updateValue: {
         raw: (data: any, mimeType?: NodeDataMimeTypes) => void;
         text: (data: string) => void;
@@ -34,9 +40,13 @@ type NodeData = {
     subscribed: Accessor<boolean>
 }
 
-function node(id: UUID): NodeData | null {
+type SafeNodeData = NodeData & {
+    node: Accessor<NodeT>
+}
 
-    const nodeData = createMemo(() => nodes[id] || null)
+function node(id: UUID): NodeData {
+
+    const nodeData = createMemo(() => nodes[id] || null) as Accessor<NodeT | null>
 
     const unv = (data: Any) => connection()?.updateNodeValue(id, data)
     const updateValue = {
@@ -44,7 +54,7 @@ function node(id: UUID): NodeData | null {
         text: (data: string) => unv(Serialize.text(data)),
         number: (data: number) => unv(Serialize.number(data)),
         boolean: (data: boolean) => unv(Serialize.boolean(data)),
-        json: (data: object) => unv(Serialize.json(data)),
+        json: (data: object, type?: string | null) => unv(Serialize.json(data, type)),
         textCsv: (data: string) => unv(Serialize.textCsv(data)),
         textJavascript: (data: string) => unv(Serialize.textJavascript(data)),
         textHtml: (data: string) => unv(Serialize.textHtml(data)),
@@ -54,11 +64,11 @@ function node(id: UUID): NodeData | null {
         imageSvgXml: (data: SVGElement) => unv(Serialize.imageSvgXml(data))
     }
 
-    // the drop option needs to be used with care because it doesnt sync
-    const unsubscribe = (drop=false) => connection()?.unsubscribeFromNode(id, drop)
-    const subscribed = createMemo(() => session()?.subscribedNodesIDs.includes(id))
+    // the drop option needs to be used with care because it doesnt sync with other clients
+    const unsubscribe = (drop = false) => connection()?.unsubscribeFromNode(id, drop)
+    const subscribed = createMemo(() => session()?.subscribedNodesIDs.includes(id) || false)
 
-    return nodeData() == null ? null : {
+    return {
         node: nodeData,
         updateValue: updateValue,
         unsubscribe: unsubscribe,
@@ -66,11 +76,14 @@ function node(id: UUID): NodeData | null {
     }
 }
 
-function Node(props: NodeProps) {
+function Node(props: UnsafeNodeProps) {
     const id = props.id
     const n = node(id)
-
-    return n !== null ? props.children(n) : null
+    if ("safe" in props) {
+        return n.node() ? props.children(n as SafeNodeData) : null
+    } else {
+        return (props as UnsafeNodeProps).children(n as NodeData)
+    }
 }
 
 export {

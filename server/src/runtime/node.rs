@@ -5,6 +5,8 @@ use std::sync::Arc;
 use tokio::sync::{mpsc, mpsc::Receiver, mpsc::Sender, Mutex};
 use uuid::Uuid;
 
+use super::node_receiver::NodeReceiver;
+
 /**
  * NotifyChangeOptions are responsible to control when the node
  * should notify/stream its value to the nodes who depend on it
@@ -37,6 +39,8 @@ pub struct Node<T> {
     notify_change_option: NotifyChangeOptions,
     // a node can depend on multiple other nodes
 
+    subscribed: DashMap<Uuid, NodeReceiver<T>>,
+
     // dependencies: Vec<Arc<Mutex<<Self>>>,
     subscribers: DashMap<Uuid, Sender<Option<Value<T>>>>,
 }
@@ -48,10 +52,18 @@ where
     pub fn new(value: Option<T>) -> Node<T> {
         Node {
             id: Uuid::new_v4(),
-            value: Arc::new(Mutex::new(None)),
+            value: Arc::new(Mutex::new(match value {
+                Some(value) => Some(Value { 
+                    value, 
+                    timestamp: Utc::now() 
+                }),
+                None => None,
+            })),
 
+            
             notify_change_option: NotifyChangeOptions::Value,
-
+            
+            subscribed: DashMap::new(),
             subscribers: DashMap::new(),
         }
     }
@@ -86,7 +98,6 @@ where
     pub async fn update_value(&self, new_value: Option<Value<T>>) {
         let mut v = self.value.lock().await;
         
-
         let mut time_changed = true;
         let mut value_changed = true;
         if let Some(new_value) = new_value.clone() {

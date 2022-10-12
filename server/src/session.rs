@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use async_trait::async_trait;
 use chrono::{DateTime, Duration, Utc};
 use dashmap::{DashMap, DashSet};
 use futures::future::join_all;
@@ -8,9 +9,10 @@ use tokio_stream::{wrappers::ReceiverStream, StreamExt};
 use tonic::Status;
 use uuid::Uuid;
 
-use crate::api;
+use crate::api::{StreamResponse};
 use crate::api::StreamResponses;
 use crate::builders;
+use crate::specs::{Sender, NodeSubscriber, SelfAware};
 use crate::{connection::Connection, state::GlobalState};
 
 /**
@@ -82,10 +84,13 @@ impl Session {
         *a = Utc::now() + Duration::seconds(240);
         println!("Session: Lifetime got reset");
     }
+}
 
-    pub async fn publish_self(&self) {
+#[async_trait]
+impl SelfAware for Session {
+    async fn publish_self(&self) {
         let res = self
-            .send_single_data(builders::Response::session_stream(self))
+            .send_single(builders::Response::session_stream(self))
             .await;
         match res {
             Ok(_) => {}
@@ -94,8 +99,11 @@ impl Session {
             }
         }
     }
+}
 
-    pub async fn subscribe_to_node(self: Arc<Self>, node_id: Uuid) {
+#[async_trait]
+impl NodeSubscriber for Session {
+    async fn subscribe_to_node(self: Arc<Self>, node_id: Uuid) {
         if let Some(receiver) = self
             .clone()
             .global_state
@@ -111,7 +119,7 @@ impl Session {
                 let mut stream = ReceiverStream::new(receiver);
                 while let Some(data) = stream.next().await {
                     let err = s1
-                        .send_single_data(builders::Response::node_stream(&node_id, data))
+                        .send_single(builders::Response::node_stream(&node_id, data))
                         .await;
                     if let Err(err) = err {
                         println!("Session.subscribe_to_node: received error - {:?}", err);
@@ -124,7 +132,7 @@ impl Session {
         }
     }
 
-    pub async fn unsubscribe_from_node(self: Arc<Self>, node_id: Uuid) {
+    async fn unsubscribe_from_node(self: Arc<Self>, node_id: Uuid) {
         let mut promises = vec![];
         for connection in self.connections.iter() {
             let s = self.clone();
@@ -139,17 +147,20 @@ impl Session {
         // wehen we unsubscribe from a node we publish that information to the clients over the session
         self.publish_self().await
     }
+}
 
-    pub async fn send(
+#[async_trait]
+impl Sender for Session {
+    async fn send_multi(
         &self,
-        responses: Result<StreamResponses, Status>,
+        responses: StreamResponses,
     ) -> Result<(), SendError<Result<StreamResponses, Status>>> {
         let mut promises = vec![];
         for connection in self.connections.iter() {
             let conn = connection.value().clone();
             let r = responses.clone();
             promises.push(async move {
-                let prom = conn.send(r);
+                let prom = conn.send_multi(r);
                 prom.await
             });
         }
@@ -157,13 +168,13 @@ impl Session {
         Ok(())
     }
 
-    pub async fn send_single_data(
+    async fn send_single(
         &self,
-        response: api::StreamResponse,
+        response: StreamResponse,
     ) -> Result<(), SendError<Result<StreamResponses, Status>>> {
-        self.send(Ok(builders::Response::stream_responses(
+        self.send_multi(builders::Response::stream_responses(
             [response].to_vec(),
-        )))
+        ))
         .await
     }
 }

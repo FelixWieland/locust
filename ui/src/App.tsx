@@ -1,22 +1,16 @@
 import { Component, createSignal } from 'solid-js';
-import { Connection } from './runtime/ConnectionManager';
-import { ConnectionOptions } from './runtime/types';
+import { Connection } from './runtime';
+import { PartialOptions } from './runtime/types';
 import { Test } from './Test';
 
 const App: Component = () => {
-
-  const [options, setOptions] = createSignal<ConnectionOptions>({
-    endpoint: 'http://192.168.178.161:8080',
-    session: {
-      aquire: true,
-      storage: localStorage
-    },
-  })
-
   return (<>
     <Test />
     <Connection
-      options={options()}
+      options={{
+        endpoint: 'http://192.168.178.161:8080',
+        sessionAquire: true
+      }}
     />
   </>);
 };

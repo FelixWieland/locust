@@ -17,23 +17,27 @@ export enum ConnectionState {
     ERROR
 }
 
-export type ConnectionOptions = {
+export type Options = {
     endpoint: string
 
-    session?: {
-        aquire?: boolean,
-        token?: string
-        storage?: Storage
-    }
+    requestBatchMs: number,
+    requestDebounceMs: number
 
-    sidebar?: {
-        disabled?: boolean,
-        open?: boolean,
-    },
+    sessionAquire: boolean,
+    sessionToken?: string
+    
+    storage: Storage
+
+    sidebarDisabled: boolean
+    sidebarOpen: boolean
+}
+
+export type PartialOptions = Partial<Options> & {
+    endpoint: string
 }
 
 export interface Storage {
-    getItem(key: string): string
+    getItem(key: string): string | null
     setItem(key: string, value: string): void
 }
 

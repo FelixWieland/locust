@@ -1,12 +1,13 @@
 import { apiClient } from "./api/api.client";
-import { Heartbeat, Session, StreamRequest, StreamResponse, UnaryStreamRequest, CreateNode, Node, UpdateNodeValue, NodeValue, None } from "./api/messages";
-import { ConnectionOptions, UUID } from "./types";
+import { Heartbeat, Session, StreamRequest, StreamResponse, UnaryStreamRequest, CreateNode, Node, UpdateNodeValue, NodeValue, None, StreamResponses, StreamRequests } from "./api/messages";
+import { Options, UUID } from "./types";
 import { NodeValue as NodeValueC } from "./node_value";
 import * as heartbeat from './time'
-import { readSessionToken, setLatency, setSession, updateNodes, writeSessionToken } from "./store";
+import { readSessionToken, setLatency, setLastServerResponseTime, setSession, updateNodes, writeSessionToken } from "./store";
 import { assure } from "./util";
 import { produce } from "solid-js/store";
 import { Any } from "./api/google/protobuf/any";
+import { Batcher } from "./batcher";
 
 class Connection {
     private _server: apiClient;
@@ -17,27 +18,35 @@ class Connection {
 
     private _latencyMs: null | number
 
-    private _options: ConnectionOptions
+    private _options: Options
+
+    private _requestBatcher: Batcher<StreamRequests, Promise<void>>;
 
     private _STOP = false
 
-    constructor(connectionID: UUID, apiServer: apiClient, options: ConnectionOptions) {
+    constructor(connectionID: UUID, apiServer: apiClient, options: Options) {
         this._id = connectionID
         this._server = apiServer
         this._options = options
 
+        this._requestBatcher = new Batcher(
+            this.combineStreamRequestsAndSend.bind(this), 
+            options.requestBatchMs, 
+            options.requestDebounceMs
+        )
+
         this.beatOnce()
     }
 
-    id(): UUID {
+    public id(): UUID {
         return this._id;
     }
 
-    heartIsBeating(): boolean {
+    public heartIsBeating(): boolean {
         return false
     }
 
-    async beatOnce() {
+    public async beatOnce() {
         if (this._STOP) {
             return
         }
@@ -48,16 +57,19 @@ class Connection {
             oneofKind: "heartbeat",
             heartbeat: this._lastHeartbeat,
         }
-        this.sendSingleData(sr).finally(() => {
+        this.sendSingle(sr, true).finally(() => {
             setTimeout(() => this.beatOnce(), 10000)
         })
     }
 
-    async send(requests: Array<StreamRequest>) {
+    private async combineStreamRequestsAndSend(requests: Array<StreamRequests>) {
+        if (this._STOP) {
+            return
+        }
         try {
             const sr = UnaryStreamRequest.create()
             sr.connectionID = this._id
-            sr.requests.push(...requests)
+            sr.requests = requests.flatMap(r => r.requests)
             const r = this._server.streamRequest(sr)
             await r.response
         } catch (ex) {
@@ -69,7 +81,22 @@ class Connection {
         }
     }
 
-    async createNode(nv?: NodeValue) {
+    private async sendMulti(requests: Array<StreamRequest>, unbatched=false) {
+        const sr = UnaryStreamRequest.create()
+        sr.connectionID = this._id
+        sr.requests = requests
+        if (unbatched) {
+            this.combineStreamRequestsAndSend([sr])
+        } else {
+            this._requestBatcher.push(sr)
+        }
+    }
+
+    private async sendSingle(sr: StreamRequest, unbatched=false) {
+        await this.sendMulti([sr], unbatched)
+    }
+
+    public async createNode(nv?: NodeValue) {
         const sr = StreamRequest.create()
         sr.data = {
             oneofKind: "createNode",
@@ -83,10 +110,10 @@ class Connection {
                 }
             }
         }
-        await this.sendSingleData(sr)
+        await this.sendSingle(sr)
     }
 
-    async updateNodeValue(nodeID: string, data: Any) {
+    public async updateNodeValue(nodeID: string, data: Any) {
         const sr = StreamRequest.create()
         const up = UpdateNodeValue.create()
         up.id = nodeID
@@ -95,10 +122,10 @@ class Connection {
             oneofKind: "updateNodeValue",
             updateNodeValue: up
         }
-        await this.sendSingleData(sr)
+        await this.sendSingle(sr)
     }
 
-    async subscribeToNode(nodeID: string) {
+    public async subscribeToNode(nodeID: string) {
         const sr = StreamRequest.create()
         sr.data = {
             oneofKind: "subscribeToNode",
@@ -106,10 +133,10 @@ class Connection {
                 id: nodeID
             }
         }
-        await this.sendSingleData(sr)
+        await this.sendSingle(sr)
     }
 
-    async unsubscribeFromNode(nodeID: string, drop: boolean = true) {
+    public async unsubscribeFromNode(nodeID: string, drop: boolean = true) {
         const sr = StreamRequest.create()
         sr.data = {
             oneofKind: "unsubscribeFromNode",
@@ -117,17 +144,18 @@ class Connection {
                 id: nodeID
             }
         }
-        await this.sendSingleData(sr)
+        await this.sendSingle(sr)
         if (drop) {
             this.dropNodeState(nodeID)
         }
     }
 
-    async sendSingleData(sr: StreamRequest) {
-        await this.send([sr])
+    public onResponses(message: StreamResponses) {
+        setLastServerResponseTime(new Date())
+        message.responses.forEach(response => this.onResponse(response))
     }
 
-    onResponse(response: StreamResponse) {
+    private onResponse(response: StreamResponse) {
         if (assure(response, "heartbeat")) {
             this.onHeartbeat((response.data as unknown as any).heartbeat as Heartbeat)
         } else if (assure(response, "session")) {
@@ -138,7 +166,7 @@ class Connection {
 
         }
     }
-    
+
     private dropNodeState(nodeID: string) {
         updateNodes(produce(nodes => {
             delete nodes[nodeID]
@@ -146,7 +174,7 @@ class Connection {
     }
 
     private onHeartbeat(data: Heartbeat) {
-        if (this._lastHeartbeat == null) {
+        if (!this._lastHeartbeat || !this._lastHeartbeat.timestamp || !data.timestamp) {
             return
         }
         this._latencyMs = heartbeat.calculateLatencyMs(this._lastHeartbeat.timestamp, data.timestamp)
@@ -155,11 +183,11 @@ class Connection {
     }
 
     private onSession(data: Session) {
-        if ((this._options.session?.token || readSessionToken(this._options.session.storage || sessionStorage)) == data.sessionToken) {
+        if ((this._options.sessionToken || readSessionToken(this._options.storage)) == data.sessionToken) {
             console.log(`Session: aquired/received session`)
         } else {
             console.log(`Session: aquired new session`)
-            writeSessionToken(data.sessionToken, this._options.session.storage || sessionStorage)
+            writeSessionToken(data.sessionToken, this._options.storage)
         }
         setSession(data)
     }
@@ -171,7 +199,7 @@ class Connection {
             const _timestamp = ts ? Math.floor(new Date(Number(ts.seconds) * 1000 + (Math.floor(ts.nanos / 1000))).valueOf() / 1000) : undefined
             const _value = (data?.value as any)?.some?.data
             if (nodes[data.id]) {
-                nodes[data.id].value().set({
+                nodes[data.id]!.value().set({
                     _timestamp,
                     _value
                 })
@@ -186,6 +214,8 @@ class Connection {
 
     die() {
         this._STOP = true
+        setSession(null)
+        setLatency(null)
     }
 }
 

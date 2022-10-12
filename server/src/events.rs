@@ -4,6 +4,7 @@ use std::sync::Arc;
 use tonic::Status;
 
 use crate::api::{CreateNode, UpdateNodeValue, AcquireSession, SubscribeToNode, UnsubscribeFromNode};
+use crate::specs::NodeSubscriber;
 use crate::{api, api::StreamRequests, connection::Connection, api::Heartbeat};
 
 pub struct DataHandler {}

@@ -1,4 +1,4 @@
-export * from './ConnectionManager'
+export * from './components'
 export * from './node'
 export {
     session,

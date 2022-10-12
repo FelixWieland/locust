@@ -9,12 +9,12 @@ export function NodeValue(ts?: number, value?: Any) {
         _value: value,
     })
 
-    const def = createMemo(() => <T>(fn: (a: Any) => T, def: T) => read()._value ? fn(read()._value) : def)
+    const def = createMemo(() => <T>(fn: (a: Any) => T, def: T) => read()._value ? fn(read()._value!) : def)
 
     return createMemo(() => ({
         read: read,
         set: set,
-        mime: () => (read()._value ? read()._value.typeUrl : '') as NodeDataMimeTypes,
+        mime: () => (read()._value ? read()._value!.typeUrl : '') as NodeDataMimeTypes,
         timestamp: () => (read()._timestamp ? this.read()._timestamp : -1),
         raw: () => def()(Parse.raw, new Uint8Array()),
         text: () => def()(Parse.text, ''),

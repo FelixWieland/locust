@@ -14,6 +14,10 @@ export function calculateLatencyMs(client: Timestamp, server: Timestamp): number
     return Math.floor((s.valueOf() - c.valueOf()) / 1000)
 }
 
+export function dateTimeFromProto(ts: Timestamp) {
+    return new Date(Number(ts.seconds) * 1000 + (Math.floor(ts.nanos / 1000)))
+}
+
 export function timestampFromProto(ts: Timestamp) {
-    return Math.floor(new Date(Number(ts.seconds) * 1000 + (Math.floor(ts.nanos / 1000))).valueOf() / 1000)
+    return Math.floor(dateTimeFromProto(ts).valueOf() / 1000)
 }

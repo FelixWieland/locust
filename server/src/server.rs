@@ -4,6 +4,7 @@ use tonic::{codegen::futures_core::Stream, Request, Response, Status};
 use uuid::Uuid;
 
 use crate::api::{api_server::Api, None, StreamRequests, StreamResponses, UnaryStreamRequest};
+use crate::specs::SelfAware;
 use crate::{events, state::GlobalState, util::api_receiver_stream::APIReceiverStream};
 
 #[derive(Debug)]

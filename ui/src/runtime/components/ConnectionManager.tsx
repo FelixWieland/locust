@@ -1,17 +1,19 @@
 import { createEffect, createSignal, onCleanup } from "solid-js"
 import { createStore } from "solid-js/store"
-import { apiClient } from "./api/api.client"
-import { StreamRequests, Connection as ConnectionT, StreamRequest, AcquireSession, None } from './api/messages';
+import { apiClient } from "../api/api.client"
+import { StreamRequests, Connection as ConnectionT, StreamRequest, AcquireSession, None } from '../api/messages';
 import { Sidebar } from "./Sidebar"
-import { Connection } from './connection'
+import { Connection } from '../connection'
 
 import { GrpcWebFetchTransport } from "@protobuf-ts/grpcweb-transport";
-import { ConnectionOptions, ConnectionState, UUID } from "./types";
-import { connection, readSessionToken, setConnection } from "./store";
+import { Options, ConnectionState, UUID, PartialOptions } from "../types";
+import { connection, connectionState, readSessionToken, setConnection, setConnectionState } from "../store";
+import { registerShortcut } from "../shortcut";
+import { defaultOptions } from "../options";
 
 type ConnectionProps = {
-    options: ConnectionOptions
-    onOptionChange?: (newOptions: ConnectionOptions) => void
+    options: PartialOptions
+    onOptionChange?: (newOptions: Options) => void
 }
 
 /**
@@ -19,8 +21,11 @@ type ConnectionProps = {
  * There is only one connection allowed (per tab)
  */
 function ConnectionManager(props: ConnectionProps) {
-    const [open, setOpen] = createSignal(props.options.sidebar?.open || false)
-    const [connectionState, setConnectionState] = createSignal(ConnectionState.CONNECTING)
+    const options = { ...props.options, ...defaultOptions } as Options
+
+    const [open, setOpen] = createSignal(options.sidebarOpen)
+
+    registerShortcut('b', true, () => setOpen(o => !o))
 
     const transport = new GrpcWebFetchTransport({
         baseUrl: props.options.endpoint
@@ -28,15 +33,9 @@ function ConnectionManager(props: ConnectionProps) {
 
     const apiServer = new apiClient(transport)
 
-    const onKeyDown = (event) => {
-        if (event.key === 'b' && event.metaKey) {
-            setOpen(o => !o)
-        }
-    }
-
-    function acquireSession(): AcquireSession {
+    const acquireSession = () => {
         const acquireSession = AcquireSession.create()
-        const sessionToken = props.options.session?.token || readSessionToken(props.options.session?.storage || sessionStorage)
+        const sessionToken = options.sessionToken || readSessionToken(options.storage)
         if (!sessionToken) {
             acquireSession.data = {
                 oneofKind: 'none',
@@ -51,10 +50,9 @@ function ConnectionManager(props: ConnectionProps) {
         return acquireSession
     }
 
-    function getInitialRequests(): Array<StreamRequest> {
+    const getInitialRequests = () => {
         const initialRequests: Array<StreamRequest> = []
-
-        if (props.options.session?.aquire) {
+        if (options.sessionAquire) {
             const sr = StreamRequest.create()
             const ar = acquireSession()
             sr.data = {
@@ -63,11 +61,10 @@ function ConnectionManager(props: ConnectionProps) {
             }
             initialRequests.push(sr)
         }
-
         return initialRequests
     }
 
-    function startConnection(options: ConnectionOptions) {
+    function startConnection(options: Options) {
         let c: Connection | null = null
         setConnectionState(ConnectionState.CONNECTING)
 
@@ -104,21 +101,19 @@ function ConnectionManager(props: ConnectionProps) {
                 if (response.data.oneofKind === "connection" && c === null) {
                     // WHY THE FUCK DO I NEED TO DO THIS TYPESCRITP????!=!"§="I§ HOLY
                     const data = (response.data as unknown as any).connection as ConnectionT
-                    c = new Connection(data.id, apiServer, props.options)
+                    c = new Connection(data.id, apiServer, options)
                     setConnection(c)
                     setConnectionState(ConnectionState.CONNECTED)
                 }
-                if (c !== null) {
-                    c.onResponse(response)
-                }
             })
+            if (c !== null) {
+                c.onResponses(message)
+            }
         })
     }
 
-    document.addEventListener('keydown', onKeyDown)
-
     createEffect(() => {
-        startConnection(props.options)
+        startConnection(options)
         onCleanup(() => {
             try {
                 connection()?.die()
@@ -134,7 +129,6 @@ function ConnectionManager(props: ConnectionProps) {
         } catch { }
         setConnection(null)
         setConnectionState(ConnectionState.ERROR)
-        document.removeEventListener('keydown', onKeyDown)
     })
 
     return (<>
@@ -157,10 +151,10 @@ function ConnectionManager(props: ConnectionProps) {
                 }}
             />
         </span>
-        {!props.options.sidebar?.disabled && (
+        {!options.sidebarDisabled && (
             <Sidebar
                 open={open()}
-                options={props.options}
+                options={options}
                 onOptionsChange={props.onOptionChange}
             />
         )}

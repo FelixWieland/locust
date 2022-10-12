@@ -1,17 +1,34 @@
-import { createEffect, createSignal, onCleanup } from "solid-js"
-import { ConnectionOptionPopup } from "./ConnectionOptionPopup";
-import { connection } from "./store";
-import { ConnectionOptions } from "./types";
+import { createEffect, createSignal, on, onCleanup } from "solid-js"
+import { OptionsPopup } from "./OptionPopup";
+import { connection } from "../store";
+import { Options } from "../types";
+import { registerShortcut } from "../shortcut";
 
 
 type SidebarProps = {
     open: boolean
-    options: ConnectionOptions
-    onOptionsChange: (newOptions: ConnectionOptions) => void
+    options: Options
+    onOptionsChange?: (newOptions: Options) => void
 }
 
 function Sidebar(props: SidebarProps) {
     const [optionsPopupOpen, setOptionsPopupOpen] = createSignal(false)
+
+    const toggleLightmode = () => {
+        if (document.documentElement.classList.contains("dark")) {
+            document.documentElement.classList.remove("dark")
+            if (!document.documentElement.classList.contains("light")) {
+                document.documentElement.classList.add("light")
+            }
+        } else {
+            if (document.documentElement.classList.contains("light")) {
+                document.documentElement.classList.remove("light")
+                if (!document.documentElement.classList.contains("dark")) {
+                    document.documentElement.classList.add("dark")
+                }
+            }
+        }
+    }
 
     const setBodyPadding = () => {
         document.body.style.paddingLeft = '3rem';
@@ -20,6 +37,9 @@ function Sidebar(props: SidebarProps) {
     const removeBodyPadding = () => {
         document.body.style.paddingLeft = '';
     }
+
+    registerShortcut(',', true, () => setOptionsPopupOpen(o => !o))
+    registerShortcut('l', true, toggleLightmode)
 
     createEffect(() => {
         document.body.style.transitionProperty = 'padding'
@@ -49,7 +69,7 @@ function Sidebar(props: SidebarProps) {
             <div class="mb-1 mt-1">
 
             </div>
-            <ConnectionOptionPopup
+            <OptionsPopup
                 open={optionsPopupOpen()}
                 onClose={() => setOptionsPopupOpen(false)}
                 options={props.options}
