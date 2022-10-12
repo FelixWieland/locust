@@ -5,6 +5,10 @@ use uuid::Uuid;
 
 use super::node::{Node, Value};
 
+/**
+ * Runtime holds a network from nodes
+ * it can walk through the nodes and creates a node schema. Based on that schema it can reinitialize all the nodes
+ */
 #[derive(Debug)]
 pub struct Runtime<T> {
     nodes: DashMap<Uuid, Arc<Node<T>>>,

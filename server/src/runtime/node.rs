@@ -24,10 +24,7 @@ pub enum NotifyChangeOptions {
  * - Sensor
  * - Actor
  *
- * - Storage
- * - Logic
- *
- * The Storage and Logic implementations can change depending on the need
+ * The Storage and Logic can be implemented with the event system
  *
  * Basically its a variable with reactive capabilities.
  */
@@ -41,7 +38,6 @@ pub struct Node<T> {
 
     subscribed: DashMap<Uuid, NodeReceiver<T>>,
 
-    // dependencies: Vec<Arc<Mutex<<Self>>>,
     subscribers: DashMap<Uuid, Sender<Option<Value<T>>>>,
 }
 
