@@ -36,6 +36,11 @@ pub trait NodeEvents<T> {
      */
     // fn on_(node: &Node<T>, subscrib);
 
+    /**
+     * Runs when the node unsubscribes to another node
+     */
+    // fn on_(node: &Node<T>, &unsubscribes)
+
 
     /**
      * Runs after the value got updated and controls if the subscribers should be notified about the update
