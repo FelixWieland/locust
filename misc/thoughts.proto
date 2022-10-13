@@ -1,0 +1,107 @@
+syntax = "proto3";
+package api;
+
+message None {}
+
+message StreamResponses {
+    repeated StreamRequest requests = 1;
+}
+
+message StreamResponse {
+    oneof data {
+        int64 connectionID = 1;
+        uint64 heartbeat = 2; // timestamp ms
+        Session session = 3;
+        Node node = 4;
+    }
+}
+
+message StreamRequests {
+    repeated StreamRequest requests = 1;
+}
+
+message StreamRequest {
+    oneof data {
+        uint64 heartbeat = 1; // timestamp ms
+        AquireSession aquireSession = 2;
+        Subscribe subscribe = 3;
+        Unsubscribe unsubscribe = 4;
+    }
+}
+
+message UnaryStreamRequests {
+    int64 connectionID = 1;
+    StreamRequests requests = 2;
+}
+
+message AquireSession {
+    // with this the client can control if he wants to unsubscribe from all nodes when connecting to the session
+    bool unsubcribeAll = 1;
+    oneof data {
+        string token = 2;
+        None none = 3;
+    }
+}
+
+message Session {
+    string token = 1;
+    int32 activeConnections = 2;
+    repeated string subscribedNodeIDs = 3; // i always publish the full amount of subscribed nodes so the client can sync itself properly
+}
+
+message Node {
+    string id = 1;
+    string type = 2;
+
+    // can i reverse this in the runtime ? store "listens" in the node and reverse it to notifies by a 
+    // the structure could be the following -> "map[notifier_node_id][]node_ids_that_should_be_notified" based on that i can also implement easy schema generation
+    // also like that i dont have to implemented reactivity directly in the node -> node stays small and then there can be different reactive implementations based on the need
+    repeated string subscribes = 3;
+
+    oneof data {
+        Point one = 4;
+        None none = 5;
+    }
+}
+
+// represents any data at one point in time
+message Point {
+    uint64 timestamp = 1; // use uint64 for unix timestamp in millis for most effizient size 
+    bytes value = 2;
+}
+
+message Subscribe {
+    // the node id the user wants to subscribe to
+    string id = 1;
+}
+
+message Unsubscribe {
+    // the node id the user wants to unsubscribe to
+    string id = 1;
+}
+
+message CreateNode {
+    // the metadata can be used to map the request to the response over a additionaly node
+    // for example there could be a node that where a client has a default subscription to
+    // and in that node there is a mapping stored betien a name and a node id
+    // like that nodes can also have names
+    string metadata = 1;
+
+    string type = 2;
+
+    repeated string subscribes = 3;
+
+    oneof data {
+        Point one = 5;
+        None none = 6;
+    }
+}
+
+message UpdateNode {
+    Node node = 1;
+}
+
+message DeleteNode {
+    // the node id the user wants to delete
+    string id = 1;
+}
